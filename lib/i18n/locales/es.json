@@ -1,0 +1,63 @@
+{
+  "hero": {
+    "title": "Tus condiciones de surf en tiempo real",
+    "subtitle": "Accede a los datos de las boyas marinas de Francia, España, Portugal, Reino Unido e Irlanda. Altura de olas, período, energía y viento: todo lo que necesitas para comprobar las condiciones antes de entrar al agua."
+  },
+  "about": {
+    "title": "Acerca de La Boia",
+    "paragraph1": "La Boia moderniza el acceso a los datos de las boyas marinas ofreciéndote una experiencia móvil fluida y rápida. La aplicación te permite consultar en tiempo real las condiciones esenciales: altura de las olas, período, energía y viento.",
+    "paragraph2": "Combinando las observaciones de las boyas con previsiones basadas en modelos meteorológicos fiables, La Boia te permite analizar tanto el estado actual del agua como su evolución esperada.",
+    "paragraph3": "Lanzada desde Biarritz, La Boia es un proyecto de Thomas Cailhol, desarrollador y apasionado del surf en el País Vasco. La aplicación integra datos para Francia (incluyendo territorios de ultramar), España, Reino Unido, Irlanda y Portugal."
+  },
+  "features": {
+    "title": "Toda la información que necesitas",
+    "realtime": {
+      "title": "Datos en tiempo real",
+      "description": "Altura de olas, período, dirección y energía medidas por las boyas"
+    },
+    "forecast": {
+      "title": "Previsión meteorológica",
+      "description": "Houle y viento hasta 7 días con modelos fiables"
+    },
+    "coverage": {
+      "title": "Amplia cobertura",
+      "description": "Francia (metrópoli y territorios de ultramar), España, Portugal, Reino Unido e Irlanda"
+    }
+  },
+  "dataSources": {
+    "title": "Fuentes de datos fiables",
+    "description": "La Boia agrega datos de organismos oficiales y modelos meteorológicos reconocidos para ofrecerte información precisa y actualizada.",
+    "candhis": "Datos de boyas de la red francesa CANDHIS (Cerema)",
+    "puertos": "Red española de Puertos del Estado",
+    "pml": "Red británica PML (Plymouth Marine Laboratory)",
+    "infraestruturas": "Red portuguesa Infraestruturas de Portugal",
+    "marine": "Red irlandesa Marine Institute",
+    "meteofrance": "Previsiones de houle y viento de Météo-France",
+    "noaa": "Modelos NOAA (National Oceanic and Atmospheric Administration)"
+  },
+  "screenshots": {
+    "title": "Simple y rápido",
+    "buoyList": "Lista de boyas",
+    "buoyDetails": "Detalles de una boya",
+    "forecast": "Previsiones",
+    "map": "Mapa interactivo"
+  },
+  "cta": {
+    "title": "¿Listo para comprobar las condiciones?",
+    "subtitle": "Descarga La Boia gratis y accede a datos en tiempo real",
+    "downloadIOS": "Descargar en la App Store",
+    "downloadAndroid": "Disponible en Google Play"
+  },
+  "footer": {
+    "tagline": "Condiciones de surf en tiempo real",
+    "developer": "Desarrollado por Thomas Cailhol",
+    "languages": "Disponible en Français (La Bouée), English (The Buoy) y Español (La Boia)",
+    "copyright": "© 2025 La Boia. Todos los derechos reservados."
+  },
+  "notFound": {
+    "title": "404",
+    "message": "¡Oops! Página no encontrada",
+    "backHome": "Volver al inicio"
+  }
+}
+

@@ -1,0 +1,63 @@
+{
+  "hero": {
+    "title": "Your real-time surf conditions",
+    "subtitle": "Access wave buoy data from France, Spain, Portugal, United Kingdom and Ireland. Wave height, period, energy and wind: everything you need to check conditions before hitting the water."
+  },
+  "about": {
+    "title": "About The Buoy",
+    "paragraph1": "The Buoy modernizes access to marine wave buoy data by offering you a smooth and fast mobile experience. The app allows you to check essential real-time conditions: wave height, period, energy and wind.",
+    "paragraph2": "By combining buoy observations with forecasts based on reliable weather models, The Buoy allows you to analyze both the current state of the water and its expected evolution.",
+    "paragraph3": "Launched from Biarritz, The Buoy is a project by Thomas Cailhol, a developer and surf enthusiast in the Basque Country. The app integrates data for France (including overseas territories), Spain, United Kingdom, Ireland and Portugal."
+  },
+  "features": {
+    "title": "All the info you need",
+    "realtime": {
+      "title": "Real-time data",
+      "description": "Wave height, period, direction and energy measured by buoys"
+    },
+    "forecast": {
+      "title": "Weather forecast",
+      "description": "Swell and wind up to 7 days with reliable models"
+    },
+    "coverage": {
+      "title": "Wide coverage",
+      "description": "France (mainland and overseas), Spain, Portugal, UK and Ireland"
+    }
+  },
+  "dataSources": {
+    "title": "Reliable data sources",
+    "description": "The Buoy aggregates data from official organizations and recognized weather models to provide you with accurate and up-to-date information.",
+    "candhis": "Buoy data from French CANDHIS network (Cerema)",
+    "puertos": "Spanish network from Puertos del Estado",
+    "pml": "British network PML (Plymouth Marine Laboratory)",
+    "infraestruturas": "Portuguese network Infraestruturas de Portugal",
+    "marine": "Irish network Marine Institute",
+    "meteofrance": "Swell and wind forecasts from Météo-France",
+    "noaa": "NOAA models (National Oceanic and Atmospheric Administration)"
+  },
+  "screenshots": {
+    "title": "Simple and fast",
+    "buoyList": "Buoy list",
+    "buoyDetails": "Buoy details",
+    "forecast": "Forecasts",
+    "map": "Interactive map"
+  },
+  "cta": {
+    "title": "Ready to check conditions?",
+    "subtitle": "Download The Buoy for free and access real-time data",
+    "downloadIOS": "Download on the App Store",
+    "downloadAndroid": "Get it on Google Play"
+  },
+  "footer": {
+    "tagline": "Real-time surf conditions",
+    "developer": "Developed by Thomas Cailhol",
+    "languages": "Available in Français (La Bouée), English (The Buoy) and Español (La Boia)",
+    "copyright": "© 2025 The Buoy. All rights reserved."
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Oops! Page not found",
+    "backHome": "Back to home"
+  }
+}
+

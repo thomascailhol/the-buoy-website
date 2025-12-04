@@ -1,0 +1,63 @@
+{
+  "hero": {
+    "title": "Tes conditions de surf en temps réel",
+    "subtitle": "Accède aux données des bouées marines houlographes de France, Espagne, Portugal, Royaume-Uni et Irlande. Hauteur de vagues, période, énergie et vent : tout ce qu'il te faut pour checker les conditions avant de te mettre à l'eau."
+  },
+  "about": {
+    "title": "À propos de La Bouée",
+    "paragraph1": "La Bouée modernise l'accès aux données des bouées marines houlographes en t'offrant une expérience mobile fluide et rapide. L'application te permet de consulter en temps réel les conditions essentielles : hauteur des vagues, période, énergie et vent.",
+    "paragraph2": "En croisant les observations des bouées avec des prévisions basées sur des modèles météorologiques fiables, La Bouée te permet d'analyser à la fois l'état actuel du plan d'eau et son évolution attendue.",
+    "paragraph3": "Lancée depuis Biarritz, La Bouée est un projet de Thomas Cailhol, développeur et passionné de surf au Pays basque. L'application intègre des données pour la France (incluant DOM-TOM), l'Espagne, le Royaume-Uni, l'Irlande et le Portugal."
+  },
+  "features": {
+    "title": "Toutes les infos dont tu as besoin",
+    "realtime": {
+      "title": "Données en temps réel",
+      "description": "Hauteur des vagues, période, direction et énergie mesurées par les bouées"
+    },
+    "forecast": {
+      "title": "Prévisions météo",
+      "description": "Houle et vent jusqu'à 7 jours avec des modèles fiables"
+    },
+    "coverage": {
+      "title": "Large couverture",
+      "description": "France (métropole et DOM-TOM), Espagne, Portugal, UK et Irlande"
+    }
+  },
+  "dataSources": {
+    "title": "Sources de données fiables",
+    "description": "La Bouée agrège des données provenant d'organismes officiels et de modèles météorologiques reconnus pour t'offrir une information précise et à jour.",
+    "candhis": "Données de bouées du réseau français CANDHIS (Cerema)",
+    "puertos": "Réseau espagnol de Puertos del Estado",
+    "pml": "Réseau britannique PML (Plymouth Marine Laboratory)",
+    "infraestruturas": "Réseau portugais Infraestruturas de Portugal",
+    "marine": "Réseau irlandais Marine Institute",
+    "meteofrance": "Prévisions de houle et vent de Météo-France",
+    "noaa": "Modèles NOAA (National Oceanic and Atmospheric Administration)"
+  },
+  "screenshots": {
+    "title": "Simple et rapide",
+    "buoyList": "Liste des bouées",
+    "buoyDetails": "Détails d'une bouée",
+    "forecast": "Prévisions",
+    "map": "Carte interactive"
+  },
+  "cta": {
+    "title": "Prêt·e à checker les conditions ?",
+    "subtitle": "Télécharge La Bouée gratuitement et accède aux données en temps réel",
+    "downloadIOS": "Télécharger sur l'App Store",
+    "downloadAndroid": "Disponible sur Google Play"
+  },
+  "footer": {
+    "tagline": "Conditions de surf en temps réel",
+    "developer": "Développé par Thomas Cailhol",
+    "languages": "Disponible en Français, English (The Buoy) et Español (La Boia)",
+    "copyright": "© 2025 La Bouée. Tous droits réservés."
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Oops! Page non trouvée",
+    "backHome": "Retour à l'accueil"
+  }
+}
+

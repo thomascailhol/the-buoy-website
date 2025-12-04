@@ -1,0 +1,3238 @@
+openapi: 3.0.3
+info:
+  title: The Buoy API
+  version: 2.0.0
+  description: |
+    Comprehensive surf forecasting API providing real-time and forecast data for surf conditions worldwide.
+
+    ## ⚠️ Version Status
+
+    **V2 is currently under development.** This spec documents what's actually implemented.
+
+    - **V1**: Currently in production (see below for V1 endpoints)
+    - **V2**: Being built incrementally - spec updated as endpoints are implemented
+
+    ## Authentication
+
+    All V2 API requests require an API key passed in the `Authorization` header:
+    ```
+    Authorization: Bearer YOUR_API_KEY
+    ```
+
+    **Alternative:** API key can also be passed as a query parameter:
+    ```
+    ?api_key=YOUR_API_KEY
+    ```
+
+    **Getting an API Key:**
+    - API keys are generated securely using BCrypt hashing (similar to passwords)
+    - Plain text keys are shown only once during generation
+    - Keys can be regenerated if compromised (invalidates old key)
+    - Currently: Generate via Rails console (`user.generate_api_key!`)
+    - Planned: User-facing API key management UI in account settings
+
+    ## Rate Limiting
+
+    All API requests are rate limited to ensure fair usage:
+
+    - **Limit:** 1,000 requests per hour (default for all users)
+    - **Reset:** Top of each hour (e.g., 2:00 PM → 3:00 PM)
+    - **Headers:** Every response includes rate limit headers:
+      - `X-RateLimit-Limit`: Maximum requests allowed
+      - `X-RateLimit-Remaining`: Requests remaining in current hour
+      - `X-RateLimit-Reset`: Unix timestamp when limit resets
+
+    **Current Status:**
+    - ✅ Rate limit headers are included in all responses
+    - ✅ Request tracking is active
+    - ⚠️ Rate limit enforcement (429 responses) is pending implementation
+
+    **Future Tiers:**
+    - Free: 1,000 requests/hour
+    - Pro: 5,000 requests/hour (planned)
+    - Enterprise: Custom limits (planned)
+
+  contact:
+    name: API Support
+    email: api-support@thesurfkit.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://thesurfkit.com/api/v2
+    description: Production server (V2 - Under Development)
+  - url: http://localhost:3000/api/v2
+    description: Development server (V2)
+  - url: https://thesurfkit.com/api/v1
+    description: Production server (V1 - Legacy, use v2 for new integrations)
+  - url: http://localhost:3000/api/v1
+    description: Development server (V1 - Legacy)
+
+tags:
+  - name: Spots
+    description: Surf spot information and search
+  - name: Buoys
+    description: Real-time ocean buoy data
+  - name: Weather Stations
+    description: Real-time weather station data
+  - name: Conditions
+    description: All-in-one conditions endpoint
+  - name: Forecasts
+    description: Multi-day marine and weather forecasts
+  - name: Settings
+    description: User settings and preferences
+
+# Global security - all V2 endpoints require API key authentication
+security:
+  - ApiKeyAuth: []
+
+paths:
+  # ============================================================================
+  # V2 ENDPOINTS (Update this section as you implement new endpoints)
+  # ============================================================================
+
+  /ndbc/stations:
+    get:
+      tags: [NDBC]
+      summary: List active NDBC stations
+      operationId: listNdbcStations
+      responses:
+        "200":
+          description: Active stations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NdbcStation"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /ndbc/stations/historical:
+    get:
+      tags: [NDBC]
+      summary: List historical NDBC station deployments
+      operationId: listHistoricalNdbcStations
+      responses:
+        "200":
+          description: Historical station deployments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NdbcHistoricalStation"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /ndbc/stations/{id}:
+    get:
+      tags: [NDBC]
+      summary: Get NDBC station metadata
+      operationId: showNdbcStation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Station metadata
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          description: Not found
+
+  /ndbc/stations/{id}/realtime:
+    get:
+      tags: [NDBC]
+      summary: Get realtime availability for a station
+      operationId: realtimeNdbcStation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: full_response
+          schema: { type: boolean, default: false }
+          description: When true, returns the full link map; otherwise returns the list of modes.
+      responses:
+        "200":
+          description: Realtime availability
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items: { type: string }
+                  - $ref: "#/components/schemas/NdbcRealtimeAvailability"
+        "404":
+          description: Not found
+
+  /ndbc/stations/{id}/historical:
+    get:
+      tags: [NDBC]
+      summary: Get historical availability for a station
+      operationId: historicalNdbcStationAvailability
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Historical availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NdbcHistoricalAvailability"
+        "404":
+          description: Not found
+
+  /ndbc/stations/nearest:
+    get:
+      tags: [NDBC]
+      summary: Find nearest station
+      operationId: nearestNdbcStation
+      parameters:
+        - in: query
+          name: lat
+          required: true
+          schema: { type: number, format: float }
+        - in: query
+          name: lon
+          required: true
+          schema: { type: number, format: float }
+      responses:
+        "200":
+          description: Station id of nearest station
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  station_id:
+                    type: string
+
+  /ndbc/stations/radial:
+    get:
+      tags: [NDBC]
+      summary: Find stations within a radius
+      operationId: radialNdbcStations
+      parameters:
+        - in: query
+          name: lat
+          required: true
+          schema: { type: number, format: float }
+        - in: query
+          name: lon
+          required: true
+          schema: { type: number, format: float }
+        - in: query
+          name: radius
+          required: true
+          schema: { type: number, format: float }
+        - in: query
+          name: units
+          schema:
+            type: string
+            enum: [km, mi, nm]
+            default: km
+      responses:
+        "200":
+          description: Stations within radius
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NdbcStation"
+
+  /ndbc/data:
+    get:
+      tags: [NDBC]
+      summary: Fetch NDBC measurement data
+      operationId: getNdbcData
+      parameters:
+        - name: station_id
+          in: query
+          required: false
+          schema: { type: string }
+        - name: station_ids
+          in: query
+          required: false
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: true
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [adcp, cwind, ocean, spec, stdmet, supl, swden, swdir, swdir2, swr1, swr2]
+        - name: modes
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [adcp, cwind, ocean, spec, stdmet, supl, swden, swdir, swdir2, swr1, swr2]
+          style: form
+          explode: true
+        - name: start_time
+          in: query
+          schema: { type: string, format: date-time }
+        - name: end_time
+          in: query
+          schema: { type: string, format: date-time }
+        - name: use_timestamp
+          in: query
+          schema: { type: boolean, default: true }
+        - name: cols
+          in: query
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: true
+      responses:
+        "200":
+          description: Data rows
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+
+  /ndbc/ingest:
+    post:
+      tags: [NDBC]
+      summary: Ingest NDBC data into buoys/readings
+      operationId: ingestNdbcData
+      parameters:
+        - in: query
+          name: station_id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: mode
+          schema:
+            type: string
+            default: stdmet
+            enum: [stdmet]
+        - in: query
+          name: start_time
+          schema: { type: string, format: date-time }
+        - in: query
+          name: end_time
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Ingest summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  buoy_id:
+                    type: integer
+                  created_readings:
+                    type: integer
+        "400":
+          description: Invalid input
+        "422":
+          description: Validation error
+
+  /spots:
+    get:
+      tags: [Spots]
+      summary: List all spots
+      description: |
+        Get a paginated list of surf spots with optional filtering by geographic bounds, country, or magic spots only.
+
+        Returns spots in a standardized V2 format with pagination metadata.
+      operationId: listSpots
+      parameters:
+        - name: bounds
+          in: query
+          description: Geographic bounding box as JSON string `{"north":44,"south":43,"east":-1,"west":-2}`
+          schema:
+            type: string
+          example: '{"north":44,"south":43,"east":-1,"west":-2}'
+        - name: country
+          in: query
+          description: Filter by country name
+          schema:
+            type: string
+          example: "France"
+        - name: magic_only
+          in: query
+          description: Return only magic spots (spots with webcams or special designation)
+          schema:
+            type: boolean
+          example: false
+        - name: page
+          in: query
+          description: Page number (default 1)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: per_page
+          in: query
+          description: Items per page (default 50, max 100)
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                description: Maximum requests allowed per hour
+                example: 1000
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                description: Requests remaining in current hour
+                example: 987
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                description: Unix timestamp when rate limit resets
+                example: 1735326000
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          spots:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/Spot"
+                          count:
+                            type: integer
+                            description: Total number of spots matching filters
+                      meta:
+                        type: object
+                        properties:
+                          timestamp:
+                            type: string
+                            format: date-time
+                            description: Response timestamp (ISO 8601)
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
+              example:
+                status: "success"
+                data:
+                  spots:
+                    - id: 1
+                      name: "Côte des Basques"
+                      slug: "cote-des-basques"
+                      lat: 43.4832
+                      long: -1.5586
+                      country: "France"
+                      timezone: "Europe/Paris"
+                      is_magic: true
+                      webcam_url: "https://example.com/webcam"
+                  count: 150
+                meta:
+                  timestamp: "2025-11-01T10:00:00Z"
+                  page: 1
+                  per_page: 50
+                  total_pages: 3
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /spots/{spot_id}:
+    get:
+      tags: [Spots]
+      summary: Get spot details
+      description: |
+        Get detailed information about a specific spot including nearby buoys and weather stations.
+
+        The spot can be identified by ID or slug (friendly ID).
+      operationId: getSpot
+      parameters:
+        - name: spot_id
+          in: path
+          required: true
+          description: Spot ID or slug (friendly ID)
+          schema:
+            type: string
+          example: "cote-des-basques"
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: 1000
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: 987
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: 1735326000
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          spot:
+                            $ref: "#/components/schemas/SpotDetail"
+                          harbor:
+                            $ref: "#/components/schemas/Harbor"
+                          nearby_buoys:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/BuoyWithDistance"
+                            description: Up to 3 nearest buoys within 100km
+                          nearby_weather_stations:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/WeatherStationWithDistance"
+                            description: Up to 2 nearest weather stations within 100km
+                          forecast_metadata:
+                            type: object
+                            properties:
+                              available:
+                                type: boolean
+                              marine_forecast_updated_at:
+                                type: string
+                                format: date-time
+                              weather_forecast_updated_at:
+                                type: string
+                                format: date-time
+                              tide_forecast_updated_at:
+                                type: string
+                                format: date-time
+              example:
+                status: "success"
+                data:
+                  spot:
+                    id: 1
+                    name: "Côte des Basques"
+                    slug: "cote-des-basques"
+                    lat: 43.4832
+                    long: -1.5586
+                    country: "France"
+                    timezone: "Europe/Paris"
+                    is_magic: true
+                    webcam_url: "https://example.com/webcam"
+                    harbor_name: "Biarritz"
+                    tide_source: "shom"
+                    marine_weather_model: "gfs"
+                  harbor:
+                    id: 5
+                    name: "Biarritz"
+                    identifier: "BIARRITZ"
+                    lat: 43.4800
+                    lng: -1.5600
+                  nearby_buoys:
+                    - id: 10
+                      name: "Anglet"
+                      lat: 43.4832
+                      lng: -1.5586
+                      source: "météo-france"
+                      distance_km: 2.5
+                      last_reading:
+                        significient_height: 1.5
+                        period: 8.5
+                        time: "2025-11-01T10:00:00Z"
+                  nearby_weather_stations:
+                    - id: 20
+                      name: "Biarritz Airport"
+                      lat: 43.4700
+                      lng: -1.5300
+                      source: "météo-france"
+                      distance_km: 3.2
+                  forecast_metadata:
+                    available: true
+                    marine_forecast_updated_at: "2025-11-01T09:00:00Z"
+                    weather_forecast_updated_at: "2025-11-01T09:00:00Z"
+                    tide_forecast_updated_at: "2025-11-01T08:00:00Z"
+                meta:
+                  timestamp: "2025-11-01T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /spots/autocomplete:
+    get:
+      tags: [Spots]
+      summary: Search spots (autocomplete)
+      description: |
+        Search for spots by name. Returns matching spots for autocomplete functionality.
+
+        Minimum search term length is 2 characters. Returns up to 50 results.
+      operationId: autocompleteSpots
+      parameters:
+        - name: term
+          in: query
+          required: true
+          description: Search term (minimum 2 characters)
+          schema:
+            type: string
+            minLength: 2
+          example: "basque"
+        - name: limit
+          in: query
+          description: Maximum number of results (default 10, max 50)
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 50
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: 1000
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: 987
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: 1735326000
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          spots:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/SpotAutocomplete"
+              example:
+                status: "success"
+                data:
+                  spots:
+                    - id: 1
+                      name: "Côte des Basques"
+                      slug: "cote-des-basques"
+                      lat: 43.4832
+                      long: -1.5586
+                      country: "France"
+                meta:
+                  timestamp: "2025-11-01T10:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+          description: Search term too short (less than 2 characters)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  # ============================================================================
+  # V2 BUOYS API
+  # ============================================================================
+
+  /buoys:
+    get:
+      tags: [Buoys]
+      summary: List all buoys
+      description: |
+        Get a paginated list of buoys with optional filtering by geographic bounds, source, or active status.
+
+        Returns buoys in a standardized V2 format with pagination metadata.
+      operationId: listBuoys
+      parameters:
+        - name: bounds
+          in: query
+          description: Geographic bounding box as JSON string `{"north":44,"south":43,"east":-1,"west":-2}`
+          schema:
+            type: string
+          example: '{"north":44,"south":43,"east":-1,"west":-2}'
+        - name: near
+          in: query
+          description: Coordinates and radius in format `lat,lng` (e.g., "43.5,-1.5"). Use with `radius` parameter.
+          schema:
+            type: string
+          example: "43.5,-1.5"
+        - name: radius
+          in: query
+          description: "Search radius in kilometers (used with `near` parameter, default: 100)"
+          schema:
+            type: integer
+            default: 100
+        - name: source
+          in: query
+          description: Filter by source (e.g., "Candhis", "Meteo France", "Sofar Ocean")
+          schema:
+            type: string
+        - name: active_only
+          in: query
+          description: "Only return buoys with recent readings (default: true)"
+          schema:
+            type: boolean
+            default: true
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      buoys:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Buoy"
+                      count:
+                        type: integer
+                        description: Total number of buoys matching filters
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+              example:
+                status: "success"
+                data:
+                  buoys:
+                    - id: 10
+                      name: "Anglet"
+                      lat: 43.4832
+                      lng: -1.5586
+                      source: "Candhis"
+                      source_identifier: "64002"
+                      last_reading_time: "2025-11-01T10:00:00Z"
+                      readings_count: 125430
+                      last_reading:
+                        uuid: "abc-123-def"
+                        significient_height: 1.5
+                        maximum_height: 2.0
+                        period: 8.5
+                        time: "2025-11-01T10:00:00Z"
+                        water_temperature: 18.5
+                        direction: 270
+                        unit: "m"
+                  count: 1
+                meta:
+                  page: 1
+                  per_page: 50
+                  total_pages: 1
+                  timestamp: "2025-11-01T10:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /buoys/{buoy_id}:
+    get:
+      tags: [Buoys]
+      summary: Get buoy details
+      description: Get detailed information about a specific buoy including 24-hour statistics.
+      operationId: getBuoy
+      parameters:
+        - name: buoy_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      buoy:
+                        $ref: "#/components/schemas/BuoyDetail"
+                      statistics_24h:
+                        $ref: "#/components/schemas/BuoyStatistics24h"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /buoys/last_readings:
+    get:
+      tags: [Buoys]
+      summary: Get last readings for multiple buoys
+      description: |
+        Bulk fetch last readings for up to 3 buoys. Useful for displaying multiple buoys on a map.
+
+        **Limit:** Maximum 3 buoys per request.
+      operationId: getLastReadings
+      parameters:
+        - name: ids
+          in: query
+          required: true
+          description: Comma-separated buoy IDs (max 3)
+          schema:
+            type: string
+          example: "1,2,3"
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      buoys:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/BuoyWithLastReading"
+                      missing_ids:
+                        type: array
+                        items:
+                          type: integer
+                        description: IDs that were requested but not found
+        "400":
+          $ref: "#/components/responses/BadRequest"
+          description: ids parameter required
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Too many buoys requested (max 3)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "validation_failed"
+                message: "You can request up to 3 buoys at a time"
+                details:
+                  max_allowed: 3
+                  requested: 4
+                timestamp: "2025-11-01T10:00:00Z"
+                request_id: "550e8400-e29b-41d4-a716-446655440000"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /buoys/{buoy_id}/readings:
+    get:
+      tags: [Buoys]
+      summary: Get historical readings for a buoy
+      description: |
+        Get paginated historical readings for a buoy. Supports filtering by date range.
+
+        **Pagination:** Default 100 per page, maximum 1000 per page.
+      operationId: getBuoyReadings
+      parameters:
+        - name: buoy_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          description: Start date in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          description: End date in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
+          schema:
+            type: string
+            format: date-time
+        - name: date
+          in: query
+          description: Filter by single date (YYYY-MM-DD). Alternative to start_date/end_date.
+          schema:
+            type: string
+            format: date
+        - name: order
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      buoy:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          name:
+                            type: string
+                          lat:
+                            type: number
+                          lng:
+                            type: number
+                      readings:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/BuoyReading"
+                      count:
+                        type: integer
+                  meta:
+                    allOf:
+                      - $ref: "#/components/schemas/PaginationMeta"
+                      - type: object
+                        properties:
+                          date_range:
+                            type: object
+                            properties:
+                              start:
+                                type: string
+                                format: date-time
+                              end:
+                                type: string
+                                format: date-time
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /buoys/{buoy_id}/readings/search:
+    get:
+      tags: [Buoys]
+      summary: Search for reading closest to a specific time
+      description: |
+        Find the reading closest to a target datetime within a tolerance window.
+
+        Useful for finding conditions at a specific past time.
+      operationId: searchBuoyReadings
+      parameters:
+        - name: buoy_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          required: true
+          description: Target date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: time
+          in: query
+          required: true
+          description: Target time (HH:MM)
+          schema:
+            type: string
+            pattern: "^[0-9]{2}:[0-9]{2}$"
+        - name: tolerance_hours
+          in: query
+          description: "Hours to search around target time (default: 3, max: 24)"
+          schema:
+            type: integer
+            default: 3
+            minimum: 1
+            maximum: 24
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      closest_reading:
+                        allOf:
+                          - $ref: "#/components/schemas/BuoyReading"
+                          - type: object
+                            properties:
+                              time_diff_minutes:
+                                type: integer
+                                description: Minutes difference from target time
+                      search_parameters:
+                        type: object
+                        properties:
+                          target_datetime:
+                            type: string
+                            format: date-time
+                          tolerance_hours:
+                            type: integer
+                          search_range:
+                            type: object
+                            properties:
+                              start:
+                                type: string
+                                format: date-time
+                              end:
+                                type: string
+                                format: date-time
+        "400":
+          $ref: "#/components/responses/BadRequest"
+          description: Missing date or time parameter, or invalid format
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+          description: No reading found within tolerance window
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /buoys/{buoy_id}/readings/{reading_id}:
+    get:
+      tags: [Buoys]
+      summary: Get a specific buoy reading
+      description: Get detailed information about a specific reading from a buoy.
+      operationId: getBuoyReading
+      parameters:
+        - name: buoy_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: reading_id
+          in: path
+          required: true
+          description: Reading ID
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      reading:
+                        $ref: "#/components/schemas/BuoyReading"
+                      buoy:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          name:
+                            type: string
+              example:
+                status: "success"
+                data:
+                  reading:
+                    id: 12345
+                    uuid: "abc-123-def"
+                    significient_height: 1.5
+                    maximum_height: 2.0
+                    period: 8.5
+                    time: "2025-11-01T10:00:00Z"
+                    water_temperature: 18.5
+                    direction: 270
+                    direction_compass: "W"
+                    unit: "m"
+                    energy_per_wave: 25.5
+                  buoy:
+                    id: 10
+                    name: "Anglet"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /buoys/{buoy_id}/readings/chart:
+    get:
+      tags: [Buoys]
+      summary: Get chart data for a buoy
+      description: |
+        Returns comprehensive chart data including readings, forecasts, and tide levels.
+
+        **Performance:** Uses optimized algorithm (7x faster than legacy version).
+      operationId: getBuoyChart
+      parameters:
+        - name: buoy_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: optimized
+          in: query
+          description: "Use optimized version (default: true)"
+          schema:
+            type: boolean
+            default: true
+        - name: debug
+          in: query
+          description: Include performance metrics in response
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Chart data with time series arrays
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      buoy:
+                        type: object
+                      fields:
+                        type: object
+                        description: Field name mappings
+                      time:
+                        type: array
+                        items:
+                          type: string
+                          format: date-time
+                      significant_height:
+                        type: array
+                        items:
+                          type: number
+                      maximum_height:
+                        type: array
+                        items:
+                          type: number
+                      period:
+                        type: array
+                        items:
+                          type: number
+                      forecast_wave_height:
+                        type: array
+                        items:
+                          type: number
+                      tide_level:
+                        type: array
+                        items:
+                          type: number
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  # ============================================================================
+  # V2 WEATHER STATIONS API
+  # ============================================================================
+
+  /weather_stations:
+    get:
+      tags: [Weather Stations]
+      summary: List all weather stations
+      description: |
+        Get a paginated list of weather stations with optional filtering by geographic bounds or coastal proximity.
+
+        Returns stations in a standardized V2 format with pagination metadata.
+      operationId: listWeatherStations
+      parameters:
+        - name: bounds
+          in: query
+          description: Geographic bounding box as JSON string `{"north":44,"south":43,"east":-1,"west":-2}`
+          schema:
+            type: string
+          example: '{"north":44,"south":43,"east":-1,"west":-2}'
+        - name: near
+          in: query
+          description: Coordinates and radius in format `lat,lng` (e.g., "43.5,-1.5")
+          schema:
+            type: string
+          example: "43.5,-1.5"
+        - name: radius
+          in: query
+          description: "Search radius in kilometers (default: 100)"
+          schema:
+            type: integer
+            default: 100
+        - name: close_to_shore
+          in: query
+          description: Filter stations within 50km of shore
+          schema:
+            type: boolean
+        - name: active_only
+          in: query
+          description: "Only return stations with recent readings (default: true)"
+          schema:
+            type: boolean
+            default: true
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      weather_stations:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/WeatherStation"
+                      count:
+                        type: integer
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /weather_stations/{weather_station_id}:
+    get:
+      tags: [Weather Stations]
+      summary: Get weather station details
+      description: Get detailed information about a specific weather station including 24-hour statistics.
+      operationId: getWeatherStation
+      parameters:
+        - name: weather_station_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      weather_station:
+                        $ref: "#/components/schemas/WeatherStationDetail"
+                      statistics_24h:
+                        $ref: "#/components/schemas/WeatherStationStatistics24h"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /weather_stations/{weather_station_id}/weather_readings:
+    get:
+      tags: [Weather Stations]
+      summary: Get historical weather readings
+      description: Get paginated historical weather readings for a station. Supports filtering by date range.
+      operationId: getWeatherReadings
+      parameters:
+        - name: weather_station_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          description: Start date in ISO 8601 format
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          description: End date in ISO 8601 format
+          schema:
+            type: string
+            format: date-time
+        - name: date
+          in: query
+          description: Filter by single date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      weather_station:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          name:
+                            type: string
+                          lat:
+                            type: number
+                          lng:
+                            type: number
+                      weather_readings:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/WeatherReading"
+                      count:
+                        type: integer
+                  meta:
+                    allOf:
+                      - $ref: "#/components/schemas/PaginationMeta"
+                      - type: object
+                        properties:
+                          date_range:
+                            type: object
+                            properties:
+                              start:
+                                type: string
+                                format: date-time
+                              end:
+                                type: string
+                                format: date-time
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /weather_stations/{weather_station_id}/weather_readings/{reading_id}:
+    get:
+      tags: [Weather Stations]
+      summary: Get a specific weather reading
+      description: Get detailed information about a specific weather reading from a station.
+      operationId: getWeatherReading
+      parameters:
+        - name: weather_station_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: reading_id
+          in: path
+          required: true
+          description: Weather reading ID
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      weather_reading:
+                        $ref: "#/components/schemas/WeatherReading"
+                      weather_station:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          name:
+                            type: string
+              example:
+                status: "success"
+                data:
+                  weather_reading:
+                    id: 54321
+                    data_validity_time: "2025-11-01T10:00:00Z"
+                    data_production_time: "2025-11-01T09:55:00Z"
+                    temperature_2m_celsius: 18.5
+                    temperature_2m_kelvin: 291.65
+                    wind_speed_10m_ms: 4.2
+                    wind_speed_10m_kmh: 15.1
+                    gust_speed_10m_ms: 6.5
+                    gust_speed_10m_kmh: 23.4
+                    wind_direction_10m_deg: 270
+                    relative_humidity_2m: 75
+                    precipitation_6min_mm: 0.0
+                    station_pressure_hpa: 1013.25
+                    sea_level_pressure_hpa: 1013.25
+                  weather_station:
+                    id: 20
+                    name: "Biarritz Airport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /weather_stations/{weather_station_id}/weather_readings/chart:
+    get:
+      tags: [Weather Stations]
+      summary: Get chart data for a weather station
+      description: Returns chart data for the last 24 hours including wind speed, temperature, and humidity.
+      operationId: getWeatherStationChart
+      parameters:
+        - name: weather_station_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Chart data with time series arrays
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      weather_station:
+                        type: object
+                      fields:
+                        type: object
+                      time:
+                        type: array
+                        items:
+                          type: string
+                          format: date-time
+                      wind_speed_kmh:
+                        type: array
+                        items:
+                          type: number
+                      temperature_celsius:
+                        type: array
+                        items:
+                          type: number
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  # ============================================================================
+  # V2 FORECASTS API
+  # ============================================================================
+
+  /forecasts:
+    get:
+      tags: [Forecasts]
+      summary: Get multi-day forecast
+      description: |
+        Get marine and weather forecasts for a specific spot or buoy.
+        
+        **Required:** Either `spot_id` or `buoy_id` must be provided. This endpoint only returns cached forecast data (no external API calls), ensuring fast responses and controlled costs.
+        
+        Cached data is refreshed periodically by background jobs (typically every 6 hours).
+      operationId: getForecasts
+      parameters:
+        - name: spot_id
+          in: query
+          description: Spot ID (required if buoy_id not provided)
+          schema:
+            type: integer
+            example: 35
+        - name: buoy_id
+          in: query
+          description: Buoy ID (required if spot_id not provided)
+          schema:
+            type: integer
+            example: 123
+        - name: start_date
+          in: query
+          required: true
+          description: Start date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-10-27"
+        - name: end_date
+          in: query
+          required: true
+          description: End date (YYYY-MM-DD) - must be after start_date, max 16 days range
+          schema:
+            type: string
+            format: date
+            example: "2025-10-30"
+      responses:
+        "200":
+          description: Successful response with forecast data
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      location:
+                        type: object
+                        properties:
+                          lat: { type: number, format: float }
+                          lng: { type: number, format: float }
+                          timezone: { type: string }
+                      date_range:
+                        type: object
+                        properties:
+                          start_date: { type: string, format: date-time }
+                          end_date: { type: string, format: date-time }
+                          days: { type: integer }
+                      forecast:
+                        type: object
+                        properties:
+                          hourly:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/HourlyForecastEntry"
+                          daily:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/DailyForecastEntry"
+                          summary:
+                            $ref: "#/components/schemas/ForecastSummary"
+                      tides:
+                        type: object
+                        nullable: true
+                        description: Tide events (high/low times) - only available for spots/buoys with tide source configured
+                        properties:
+                          events:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/TideEvent"
+                          harbor:
+                            $ref: "#/components/schemas/HarborInfo"
+                          source:
+                            type: string
+                            description: Tide data source (e.g., "shom", "noaa")
+                      water_levels:
+                        type: object
+                        nullable: true
+                        description: Hourly water level predictions - only available for spots/buoys with tide source configured
+                        properties:
+                          levels:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/WaterLevel"
+                          harbor:
+                            $ref: "#/components/schemas/HarborInfo"
+                          source:
+                            type: string
+                            description: Water level data source (e.g., "shom", "noaa")
+                          timezone:
+                            type: string
+                            description: Timezone of the water level predictions
+                      metadata:
+                        type: object
+                        properties:
+                          forecast_updated_at: { type: string, format: date-time }
+                          spot_id: { type: integer, nullable: true }
+                          spot_name: { type: string, nullable: true }
+                          buoy_id: { type: integer, nullable: true }
+                          buoy_name: { type: string, nullable: true }
+                  meta:
+                    type: object
+                    properties:
+                      timestamp: { type: string, format: date-time }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  # ============================================================================
+  # V2 CONDITIONS API
+  # ============================================================================
+
+  /conditions:
+    get:
+      tags: [Conditions]
+      summary: Get all-in-one conditions (V2)
+      description: |
+        Returns combined forecast, reading, and tide data for a location in a standardized V2 format.
+
+        This endpoint combines:
+        - Wave forecast (height, period, direction, energy)
+        - Wind forecast (speed, direction)
+        - Swell forecast (height, period, direction)
+        - Nearest buoy reading (if available within 50km)
+        - Tide information (height, direction, next change)
+
+        **Improvements over V1:**
+        - ✅ Standardized `{status, data, meta}` response format
+        - ✅ Structured JSON data (not human-readable string)
+        - ✅ Includes nearby buoy/weather station information
+        - ✅ Better error handling
+        - ✅ Optional `spot_id` parameter for enhanced context
+        - ✅ Forecast metadata (update times, sources)
+        - ✅ Optimized queries with eager loading
+      operationId: getConditionsV2
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          description: Latitude in decimal degrees
+          schema:
+            type: number
+            format: float
+            example: 43.5
+        - name: lng
+          in: query
+          required: true
+          description: Longitude in decimal degrees
+          schema:
+            type: number
+            format: float
+            example: -1.5
+        - name: time
+          in: query
+          required: true
+          description: ISO 8601 timestamp for which to get conditions
+          schema:
+            type: string
+            format: date-time
+            example: "2025-10-27T14:00:00Z"
+        - name: spot_id
+          in: query
+          description: Optional spot ID for enhanced context and nearby data
+          schema:
+            type: integer
+            example: 123
+      responses:
+        "200":
+          description: Successful response with conditions data
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      location:
+                        type: object
+                        properties:
+                          lat:
+                            type: number
+                            format: float
+                            description: Latitude
+                            example: 43.5
+                          lng:
+                            type: number
+                            format: float
+                            description: Longitude
+                            example: -1.5
+                          timezone:
+                            type: string
+                            description: Timezone for the location
+                            example: "Europe/Paris"
+                      forecast:
+                        type: object
+                        description: Wave, wind, and swell forecast data
+                        properties:
+                          waves_height:
+                            type: number
+                            format: float
+                            description: Forecast wave height in meters
+                            example: 1.5
+                          waves_period:
+                            type: number
+                            format: float
+                            description: Forecast wave period in seconds
+                            example: 8.5
+                          waves_direction:
+                            type: string
+                            description: Forecast wave direction (compass direction)
+                            example: "SW"
+                          wind_speed:
+                            type: number
+                            format: float
+                            description: Forecast wind speed in km/h
+                            example: 15
+                          wind_direction:
+                            type: string
+                            description: Forecast wind direction (compass direction)
+                            example: "NW"
+                          swell_height:
+                            type: number
+                            format: float
+                            description: Forecast swell height in meters
+                            example: 1.2
+                          swell_period:
+                            type: number
+                            format: float
+                            description: Forecast swell period in seconds
+                            example: 10
+                          swell_direction:
+                            type: string
+                            description: Forecast swell direction (compass direction)
+                            example: "SW"
+                          wave_energy:
+                            type: number
+                            format: float
+                            description: Wave energy in kJ per meter per wave
+                            example: 25.5
+                      reading:
+                        type: object
+                        description: Nearest buoy reading (if available within 50km)
+                        nullable: true
+                        properties:
+                          exists:
+                            type: boolean
+                            description: Whether a reading was found
+                            example: true
+                          significient_height:
+                            type: number
+                            format: float
+                            description: Significant wave height in meters
+                            example: 1.8
+                          maximum_height:
+                            type: number
+                            format: float
+                            description: Maximum wave height in meters
+                            example: 2.5
+                          direction_degrees:
+                            type: integer
+                            description: Wave direction in degrees (0-360)
+                            example: 225
+                          period:
+                            type: integer
+                            description: Wave period in seconds
+                            example: 9
+                          time:
+                            type: string
+                            format: date-time
+                            description: Reading timestamp
+                            example: "2025-10-27T13:45:00Z"
+                          wave_energy:
+                            type: number
+                            format: float
+                            description: Wave energy in kJ per meter per wave
+                            example: 28.3
+                          buoy:
+                            type: object
+                            description: Information about the buoy providing the reading
+                            properties:
+                              id:
+                                type: integer
+                                example: 10
+                              name:
+                                type: string
+                                example: "Anglet"
+                              distance_km:
+                                type: number
+                                format: float
+                                description: Distance from location in kilometers
+                                example: 2.5
+                      tide:
+                        type: object
+                        description: Tide information for the location
+                        properties:
+                          height:
+                            type: number
+                            format: float
+                            description: Current tide height in meters
+                            example: 1.2
+                          time:
+                            type: string
+                            format: date-time
+                            description: Time of the tide reading
+                            example: "2025-10-27T14:00:00Z"
+                          direction:
+                            type: string
+                            enum: [rising, falling]
+                            description: Current tide direction
+                            example: "rising"
+                          seconds_to_next_tide_change:
+                            type: integer
+                            description: Seconds until the next tide change (high or low)
+                            example: 3600
+                          next_tide:
+                            type: string
+                            enum: [high, low]
+                            description: Type of the next tide change
+                            example: "high"
+                          next_tide_height:
+                            type: number
+                            format: float
+                            description: Height of the next tide in meters
+                            example: 2.5
+                          harbor:
+                            type: string
+                            description: Harbor name used for tide calculations
+                            example: "Biarritz"
+                      metadata:
+                        type: object
+                        description: Additional metadata about the data sources
+                        properties:
+                          forecast_updated_at:
+                            type: string
+                            format: date-time
+                            description: When the forecast was last updated
+                            example: "2025-10-27T09:00:00Z"
+                          reading_age_minutes:
+                            type: integer
+                            description: Age of the reading in minutes (if reading exists)
+                            nullable: true
+                            example: 15
+                          tide_source:
+                            type: string
+                            description: Source of tide data
+                            example: "shom"
+                      units:
+                        type: object
+                        description: Units used for measurements
+                        properties:
+                          height:
+                            type: string
+                            example: "m"
+                          speed:
+                            type: string
+                            example: "km/h"
+                      human_readable:
+                        type: string
+                        description: Optional human-readable conditions description (for compatibility)
+                        example: "📍 Anglet buoy (2.5km away)..."
+                  meta:
+                    type: object
+                    properties:
+                      timestamp:
+                        type: string
+                        format: date-time
+                        description: Response timestamp
+                        example: "2025-10-27T14:00:00Z"
+              examples:
+                with_reading:
+                  summary: Conditions with buoy reading
+                  value:
+                    status: "success"
+                    data:
+                      location:
+                        lat: 43.5
+                        lng: -1.5
+                        timezone: "Europe/Paris"
+                      forecast:
+                        waves_height: 1.5
+                        waves_period: 8.5
+                        waves_direction: "SW"
+                        wind_speed: 15
+                        wind_direction: "NW"
+                        swell_height: 1.2
+                        swell_period: 10
+                        swell_direction: "SW"
+                        wave_energy: 25.5
+                      reading:
+                        exists: true
+                        significient_height: 1.8
+                        maximum_height: 2.5
+                        direction_degrees: 225
+                        period: 9
+                        time: "2025-10-27T13:45:00Z"
+                        wave_energy: 28.3
+                        buoy:
+                          id: 10
+                          name: "Anglet"
+                          distance_km: 2.5
+                      tide:
+                        height: 1.2
+                        time: "2025-10-27T14:00:00Z"
+                        direction: "rising"
+                        seconds_to_next_tide_change: 3600
+                        next_tide: "high"
+                        next_tide_height: 2.5
+                        harbor: "Biarritz"
+                      metadata:
+                        forecast_updated_at: "2025-10-27T09:00:00Z"
+                        reading_age_minutes: 15
+                        tide_source: "shom"
+                      units:
+                        height: "m"
+                        speed: "km/h"
+                    meta:
+                      timestamp: "2025-10-27T14:00:00Z"
+                forecast_only:
+                  summary: Conditions with forecast only (no nearby buoy)
+                  value:
+                    status: "success"
+                    data:
+                      location:
+                        lat: 43.5
+                        lng: -1.5
+                        timezone: "Europe/Paris"
+                      forecast:
+                        waves_height: 1.5
+                        waves_period: 8.5
+                        waves_direction: "SW"
+                        wind_speed: 15
+                        wind_direction: "NW"
+                        swell_height: 1.2
+                        swell_period: 10
+                        swell_direction: "SW"
+                        wave_energy: 25.5
+                      reading:
+                        exists: false
+                      tide:
+                        height: 1.2
+                        time: "2025-10-27T14:00:00Z"
+                        direction: "rising"
+                        seconds_to_next_tide_change: 3600
+                        next_tide: "high"
+                        next_tide_height: 2.5
+                        harbor: "Biarritz"
+                      metadata:
+                        forecast_updated_at: "2025-10-27T09:00:00Z"
+                        reading_age_minutes: null
+                        tide_source: "shom"
+                      units:
+                        height: "m"
+                        speed: "km/h"
+                    meta:
+                      timestamp: "2025-10-27T14:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+          description: Missing required parameters (lat, lng, or time) or invalid format
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  # ============================================================================
+  # V1 ENDPOINTS (Legacy - Documented for reference)
+  # ============================================================================
+
+  # Note: V1 endpoints have inconsistent response formats. V2 will standardize these.
+
+  /buoys:
+    get:
+      tags: [Buoys]
+      summary: List all buoys (V1 - Legacy)
+      description: |
+        Returns an array of buoys. Filter by bounds using JSON string.
+
+        **Note:** This is V1 format. V2 will return standardized `{status, data, meta}` format.
+      operationId: listBuoysV1
+      parameters:
+        - name: bounds
+          in: query
+          description: Geographic bounding box as JSON string `{"north":44,"south":43,"east":-1,"west":-2}`
+          schema:
+            type: string
+        - name: X-App-Version
+          in: header
+          description: App version header (affects which buoys are returned)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Array of buoys (V1 format - not standardized)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    lat:
+                      type: number
+                    lng:
+                      type: number
+                    last_reading:
+                      type: object
+                      properties:
+                        significient_height:
+                          type: number
+                        maximum_height:
+                          type: number
+                        period:
+                          type: number
+                        time:
+                          type: string
+                          format: date-time
+                        water_temperature:
+                          type: number
+                        direction:
+                          type: number
+              example:
+                - id: 1
+                  name: "Anglet"
+                  lat: 43.4832
+                  lng: -1.5586
+                  last_reading:
+                    significient_height: 1.5
+                    maximum_height: 2.0
+                    period: 8.5
+                    time: "2025-11-01T10:00:00Z"
+                    water_temperature: 18.5
+                    direction: 270
+
+  /buoys/last_readings:
+    get:
+      tags: [Buoys]
+      summary: Get last readings for multiple buoys (V1 - Legacy)
+      description: |
+        Bulk fetch last readings for up to 3 buoys.
+
+        **Note:** V1 format - returns `{buoys: [...], missing_ids: [...]}`. V2 will standardize.
+      operationId: getLastReadingsV1
+      parameters:
+        - name: ids
+          in: query
+          required: true
+          description: Comma-separated buoy IDs (max 3)
+          schema:
+            type: string
+          example: "1,2,3"
+      responses:
+        "200":
+          description: Buoys with last readings (V1 format)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  buoys:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        lat:
+                          type: number
+                        lng:
+                          type: number
+                        last_reading:
+                          type: object
+                  missing_ids:
+                    type: array
+                    items:
+                      type: integer
+        "400":
+          description: Bad request - ids parameter required
+        "422":
+          description: Too many buoys requested (max 3)
+
+  /buoys/{buoy_id}/readings:
+    get:
+      tags: [Buoys]
+      summary: Get historical readings for a buoy (V1 - Legacy)
+      operationId: getBuoyReadingsV1
+      parameters:
+        - name: buoy_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          description: Filter by date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Readings data (V1 format)
+
+  /buoys/{buoy_id}/chart:
+    get:
+      tags: [Buoys]
+      summary: Get chart data for a buoy (V1 - Legacy, Recently Optimized!)
+      description: |
+        Returns chart data including readings, forecasts, and tide levels.
+
+        **Performance:** Recently optimized - 7x faster (680ms → 98ms)
+      operationId: getBuoyChartV1
+      parameters:
+        - name: buoy_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: optimized
+          in: query
+          description: Use optimized version (default true)
+          schema:
+            type: boolean
+            default: true
+        - name: debug
+          in: query
+          description: Include performance metrics
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Chart data with time series arrays
+
+  /weather_stations:
+    get:
+      tags: [Weather Stations]
+      summary: List all weather stations (V1 - Legacy)
+      description: Returns an array of weather stations (V1 format)
+      operationId: listWeatherStationsV1
+      responses:
+        "200":
+          description: Array of weather stations (V1 format)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    lat:
+                      type: number
+                    lng:
+                      type: number
+                    last_reading:
+                      type: object
+
+  /conditions:
+    get:
+      tags: [Conditions]
+      summary: Get all-in-one conditions (V1 - Legacy)
+      description: |
+        Returns combined forecast, reading, and tide data for a location.
+
+        **Note:** V1 format - returns `{status: 200, conditions: "..."}`. V2 will standardize.
+      operationId: getConditionsV1
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: lng
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: time
+          in: query
+          required: true
+          description: ISO 8601 timestamp
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Conditions data (V1 format)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    oneOf:
+                      - type: integer
+                        example: 200
+                      - type: string
+                        example: "ERROR"
+                  conditions:
+                    type: string
+                    description: Human-readable conditions description
+
+components:
+  headers:
+    XRateLimitLimit:
+      schema:
+        type: integer
+        description: Maximum requests allowed per hour
+        example: 1000
+      description: Maximum requests allowed per hour
+    XRateLimitRemaining:
+      schema:
+        type: integer
+        description: Requests remaining in current hour
+        example: 987
+      description: Requests remaining in current hour
+    XRateLimitReset:
+      schema:
+        type: integer
+        description: Unix timestamp when rate limit resets
+        example: 1735326000
+      description: Unix timestamp when rate limit resets
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: |
+        API key authentication. Pass your API key as a Bearer token in the Authorization header.
+
+        Format: `Authorization: Bearer YOUR_API_KEY`
+
+        Alternative: Pass as query parameter `?api_key=YOUR_API_KEY`
+
+        **Security:** API keys are stored as BCrypt hashes (never plain text). Only the hash is stored in the database.
+
+  schemas:
+    # V2 Standardized Response Format (to be used when endpoints are implemented)
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        data:
+          type: object
+        meta:
+          type: object
+          properties:
+            timestamp:
+              type: string
+              format: date-time
+            page:
+              type: integer
+            per_page:
+              type: integer
+
+    ErrorResponse:
+      type: object
+      description: Standardized error response format for V2 API
+      properties:
+        error:
+          type: string
+          description: Error code (e.g., "unauthorized", "bad_request", "resource_not_found")
+          example: "unauthorized"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid API key"
+        details:
+          type: object
+          description: Additional error details (optional, varies by error type)
+
+    NdbcStation:
+      type: object
+      properties:
+        id: { type: string }
+        lat: { type: number, format: float }
+        lon: { type: number, format: float }
+        elevation: { type: number, format: float, nullable: true }
+        name: { type: string }
+        owner: { type: string }
+        program: { type: string }
+        type: { type: string }
+        meteorology: { type: boolean }
+        currents: { type: boolean }
+        water_quality: { type: boolean }
+        dart: { type: boolean }
+
+    NdbcHistoricalStation:
+      allOf:
+        - $ref: "#/components/schemas/NdbcStation"
+        - type: object
+          properties:
+            hull_type: { type: string, nullable: true }
+            anemometer_height: { type: number, format: float, nullable: true }
+            start_date: { type: string }
+            end_date: { type: string }
+
+    NdbcRealtimeAvailability:
+      type: object
+      additionalProperties:
+        type: object
+        additionalProperties:
+          type: string
+
+    NdbcHistoricalAvailability:
+      type: object
+      additionalProperties:
+        type: object
+        additionalProperties:
+          type: string
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the error occurred
+          example: "2025-12-27T14:30:00Z"
+        request_id:
+          type: string
+          description: Unique request identifier for tracking/debugging
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+    Spot:
+      type: object
+      description: Basic spot information
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+          description: URL-friendly identifier
+        lat:
+          type: number
+          format: float
+        long:
+          type: number
+          format: float
+        country:
+          type: string
+        timezone:
+          type: string
+          description: IANA timezone identifier (e.g., "Europe/Paris")
+        is_magic:
+          type: boolean
+          description: Whether this is a "magic" spot (has webcam or special designation)
+        webcam_url:
+          type: string
+          format: uri
+
+    SpotDetail:
+      allOf:
+        - $ref: "#/components/schemas/Spot"
+        - type: object
+          properties:
+            harbor_name:
+              type: string
+            tide_source:
+              type: string
+              description: Source of tide data (e.g., "shom", "noaa")
+            marine_weather_model:
+              type: string
+              description: Marine weather model used (e.g., "gfs")
+
+    SpotAutocomplete:
+      type: object
+      description: Minimal spot information for autocomplete
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        lat:
+          type: number
+          format: float
+        long:
+          type: number
+          format: float
+        country:
+          type: string
+
+    Harbor:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        identifier:
+          type: string
+          description: Harbor identifier code
+        lat:
+          type: number
+          format: float
+        lng:
+          type: number
+          format: float
+
+    BuoyWithDistance:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        lat:
+          type: number
+          format: float
+        lng:
+          type: number
+          format: float
+        source:
+          type: string
+          description: Data source (e.g., "météo-france", "noaa")
+        distance_km:
+          type: number
+          format: float
+          description: Distance from spot in kilometers
+        last_reading:
+          type: object
+          properties:
+            significient_height:
+              type: number
+              format: float
+            period:
+              type: number
+              format: float
+            time:
+              type: string
+              format: date-time
+
+    WeatherStationWithDistance:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        lat:
+          type: number
+          format: float
+        lng:
+          type: number
+          format: float
+        source:
+          type: string
+          description: Data source (e.g., "météo-france", "noaa")
+        distance_km:
+          type: number
+          format: float
+          description: Distance from spot in kilometers
+
+    PaginationMeta:
+      type: object
+      description: Pagination metadata included in list responses
+      properties:
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        per_page:
+          type: integer
+          description: Number of items per page
+          example: 50
+        total_pages:
+          type: integer
+          description: Total number of pages
+          example: 5
+        timestamp:
+          type: string
+          format: date-time
+          description: Response timestamp in ISO 8601 format
+
+    Buoy:
+      type: object
+      description: Basic buoy information
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        lat:
+          type: number
+          format: float
+        lng:
+          type: number
+          format: float
+        source:
+          type: string
+          description: Data source (e.g., "Candhis", "Meteo France", "Sofar Ocean")
+        source_identifier:
+          type: string
+          description: Source-specific identifier
+        last_reading_time:
+          type: string
+          format: date-time
+          description: Timestamp of most recent reading
+        readings_count:
+          type: integer
+          description: Total number of readings for this buoy
+        last_reading:
+          $ref: "#/components/schemas/BuoyReading"
+
+    BuoyDetail:
+      allOf:
+        - $ref: "#/components/schemas/Buoy"
+        - type: object
+          properties:
+            slug:
+              type: string
+              description: URL-friendly identifier
+            country:
+              type: string
+
+    BuoyWithLastReading:
+      type: object
+      description: Buoy with last reading (used in bulk last_readings endpoint)
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        lat:
+          type: number
+          format: float
+        lng:
+          type: number
+          format: float
+        source:
+          type: string
+        last_reading:
+          $ref: "#/components/schemas/BuoyReading"
+
+    BuoyReading:
+      type: object
+      description: Individual buoy reading
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+          description: Unique identifier for the reading
+        significient_height:
+          type: number
+          format: float
+          description: Significant wave height in meters
+        maximum_height:
+          type: number
+          format: float
+          description: Maximum wave height in meters
+        period:
+          type: number
+          format: float
+          description: Wave period in seconds
+        time:
+          type: string
+          format: date-time
+          description: Reading timestamp
+        water_temperature:
+          type: number
+          format: float
+          description: Water temperature in Celsius
+        direction:
+          type: integer
+          description: Wave direction in degrees (0-360)
+        direction_compass:
+          type: string
+          description: Compass direction (e.g., "SW", "NW")
+        unit:
+          type: string
+          description: Unit abbreviation (e.g., "m")
+        energy_per_wave:
+          type: number
+          format: float
+          description: Energy per wave in kilojoules
+
+    BuoyStatistics24h:
+      type: object
+      description: 24-hour statistics for a buoy
+      properties:
+        avg_significient_height:
+          type: number
+          format: float
+          description: Average significant wave height over last 24 hours
+        max_significient_height:
+          type: number
+          format: float
+          description: Maximum significant wave height over last 24 hours
+        avg_period:
+          type: number
+          format: float
+          description: Average wave period over last 24 hours
+        max_period:
+          type: number
+          format: float
+          description: Maximum wave period over last 24 hours
+        reading_count:
+          type: integer
+          description: Number of readings in last 24 hours
+
+    WeatherStation:
+      type: object
+      description: Basic weather station information
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        lat:
+          type: number
+          format: float
+        lng:
+          type: number
+          format: float
+        distance_to_shore:
+          type: integer
+          description: Distance to shore in kilometers
+        last_reading_time:
+          type: string
+          format: date-time
+          description: Timestamp of most recent reading
+        readings_count:
+          type: integer
+          description: Total number of readings for this station
+        last_reading:
+          $ref: "#/components/schemas/WeatherReading"
+
+    WeatherStationDetail:
+      allOf:
+        - $ref: "#/components/schemas/WeatherStation"
+        - type: object
+          properties:
+            elevation:
+              type: integer
+              description: Station elevation in meters
+            station_type:
+              type: string
+              description: Type of weather station
+
+    WeatherReading:
+      type: object
+      description: Individual weather reading
+      properties:
+        id:
+          type: integer
+        data_validity_time:
+          type: string
+          format: date-time
+          description: Time when data is valid
+        data_production_time:
+          type: string
+          format: date-time
+          description: Time when data was produced
+        temperature_2m_celsius:
+          type: number
+          format: float
+          description: Temperature at 2m in Celsius
+        temperature_2m_kelvin:
+          type: number
+          format: float
+          description: Temperature at 2m in Kelvin
+        wind_speed_10m_ms:
+          type: number
+          format: float
+          description: Wind speed at 10m in m/s
+        wind_speed_10m_kmh:
+          type: number
+          format: float
+          description: Wind speed at 10m in km/h
+        gust_speed_10m_ms:
+          type: number
+          format: float
+          description: Gust speed at 10m in m/s
+        gust_speed_10m_kmh:
+          type: number
+          format: float
+          description: Gust speed at 10m in km/h
+        wind_direction_10m_deg:
+          type: integer
+          description: Wind direction at 10m in degrees (0-360)
+        relative_humidity_2m:
+          type: integer
+          description: Relative humidity at 2m in percent
+        precipitation_6min_mm:
+          type: number
+          format: float
+          description: Precipitation in last 6 minutes in mm
+        station_pressure_hpa:
+          type: number
+          format: float
+          description: Station pressure in hPa
+        sea_level_pressure_hpa:
+          type: number
+          format: float
+          description: Sea level pressure in hPa
+
+    WeatherStationStatistics24h:
+      type: object
+      description: 24-hour statistics for a weather station
+      properties:
+        avg_wind_speed:
+          type: number
+          format: float
+          description: Average wind speed over last 24 hours (m/s)
+        max_wind_speed:
+          type: number
+          format: float
+          description: Maximum wind speed over last 24 hours (m/s)
+        max_gust_speed:
+          type: number
+          format: float
+          description: Maximum gust speed over last 24 hours (m/s)
+        avg_temperature:
+          type: number
+          format: float
+          description: Average temperature over last 24 hours (Celsius)
+        reading_count:
+          type: integer
+          description: Number of readings in last 24 hours
+
+    HourlyForecastEntry:
+      type: object
+      properties:
+        time:
+          type: string
+          format: date-time
+          description: UTC timestamp
+        local_time:
+          type: string
+          format: date-time
+          description: Local timestamp based on location timezone
+        marine:
+          type: object
+          properties:
+            wave_height: { type: number, format: float }
+            wave_period: { type: number, format: float }
+            wave_direction: { type: number, format: float }
+            wave_direction_compass: { type: string }
+            swell_height: { type: number, format: float }
+            swell_period: { type: number, format: float }
+            swell_direction: { type: number, format: float }
+            swell_direction_compass: { type: string }
+            wind_wave_height: { type: number, format: float }
+            wind_wave_period: { type: number, format: float }
+            wind_wave_direction: { type: number, format: float }
+            wave_energy_kj: { type: number, format: float }
+        weather:
+          type: object
+          properties:
+            weather_code:
+              type: integer
+              description: WMO Weather interpretation code (see https://open-meteo.com/en/docs)
+            temperature_celsius: { type: number, format: float }
+            wind_speed_kmh: { type: number, format: float }
+            wind_direction: { type: number, format: float }
+            wind_direction_compass: { type: string }
+            wind_gusts_kmh: { type: number, format: float }
+            snowfall:
+              type: number
+              format: float
+              description: Snowfall in cm
+
+    DailyForecastEntry:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date (YYYY-MM-DD)
+        weather_code:
+          type: integer
+          description: WMO Weather interpretation code for the day
+        temperature_max_celsius:
+          type: number
+          format: float
+          description: Maximum temperature for the day
+        temperature_min_celsius:
+          type: number
+          format: float
+          description: Minimum temperature for the day
+        sunrise:
+          type: string
+          format: date-time
+          description: Sunrise time
+        sunset:
+          type: string
+          format: date-time
+          description: Sunset time
+
+    ForecastSummary:
+      type: object
+      properties:
+        min_wave_height: { type: number, format: float }
+        max_wave_height: { type: number, format: float }
+        avg_wave_height: { type: number, format: float }
+        min_period: { type: number, format: float }
+        max_period: { type: number, format: float }
+        avg_period: { type: number, format: float }
+        min_energy: { type: number, format: float }
+        max_energy: { type: number, format: float }
+        avg_energy: { type: number, format: float }
+
+    TideEvent:
+      type: object
+      description: A high or low tide event
+      properties:
+        datetime:
+          type: string
+          description: Date and time of the tide event (YYYY-MM-DDTHH:MM:SS)
+          example: "2025-12-02T01:46"
+        type:
+          type: string
+          enum: [high, low]
+          description: Type of tide event
+        height:
+          type: number
+          format: float
+          description: Tide height in meters
+          example: 3.81
+        coefficient:
+          type: integer
+          nullable: true
+          description: Tide coefficient (only available for some sources like SHOM)
+
+    WaterLevel:
+      type: object
+      description: Water level prediction at a specific time
+      properties:
+        datetime:
+          type: string
+          description: Date and time of the water level prediction (YYYY-MM-DDTHH:MM:SS)
+          example: "2025-12-02T00:00:00"
+        height:
+          type: number
+          format: float
+          description: Water level height in meters
+          example: 3.35
+
+    HarborInfo:
+      type: object
+      description: Harbor information for tide/water level data
+      properties:
+        id:
+          type: integer
+          description: Harbor database ID
+          example: 42
+        name:
+          type: string
+          description: Harbor name
+          example: "Biarritz"
+        lat:
+          type: number
+          format: float
+          description: Harbor latitude
+          example: 43.48
+        lng:
+          type: number
+          format: float
+          description: Harbor longitude
+          example: -1.56
+
+    UnprocessableEntity:
+      type: object
+      description: Validation error response (422)
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            details:
+              type: object
+              additionalProperties: true
+
+  responses:
+    Unauthorized:
+      description: Invalid or missing API key (401 Unauthorized)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "unauthorized"
+            message: "Invalid API key"
+            timestamp: "2025-12-27T14:30:00Z"
+            request_id: "550e8400-e29b-41d4-a716-446655440000"
+
+    BadRequest:
+      description: Bad request (400 Bad Request)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "bad_request"
+            message: "Search term must be at least 2 characters"
+            timestamp: "2025-12-27T14:30:00Z"
+            request_id: "550e8400-e29b-41d4-a716-446655440000"
+
+    NotFound:
+      description: Resource not found (404 Not Found)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "resource_not_found"
+            message: "Couldn't find Spot with 'id'=999"
+            timestamp: "2025-12-27T14:30:00Z"
+            request_id: "550e8400-e29b-41d4-a716-446655440000"
+
+    RateLimitExceeded:
+      description: Rate limit exceeded (429 Too Many Requests)
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+            description: Maximum requests allowed per hour
+            example: 1000
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+            description: Requests remaining in current hour
+            example: 0
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+            description: Unix timestamp when rate limit resets (top of next hour)
+            example: 1735326000
+        Retry-After:
+          schema:
+            type: integer
+            description: Seconds to wait before retrying
+            example: 3600
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "rate_limit_exceeded"
+            message: "You have exceeded 1000 requests per hour"
+            timestamp: "2025-12-27T14:30:00Z"
+            request_id: "550e8400-e29b-41d4-a716-446655440000"
+# ============================================================================
+# UPDATE LOG
+# ============================================================================
+#
+# This OpenAPI spec is a living document that reflects actual implementation.
+#
+# When you implement a new V2 endpoint:
+# 1. Build and test the endpoint
+# 2. Update this spec to document it
+# 3. Use standardized response format: {status: "success", data: {...}, meta: {...}}
+# 4. Include examples
+# 5. Commit both code and spec together
+#
+# Current Status:
+# - V1 endpoints: Documented above (legacy, inconsistent formats)
+# - V2 endpoints:
+#   ✅ Spots API (Phase 1) - COMPLETE
+#     - GET /spots - List spots with filtering and pagination
+#     - GET /spots/{spot_id} - Get spot details with nearby buoys/stations
+#     - GET /spots/autocomplete - Search spots
+#
+#   ✅ Buoys API (Phase 2) - COMPLETE
+#     - GET /buoys - List buoys with filtering and pagination
+#     - GET /buoys/{buoy_id} - Get buoy details with 24h statistics
+#     - GET /buoys/last_readings - Bulk fetch last readings (max 3)
+#     - GET /buoys/{buoy_id}/readings - Historical readings with pagination
+#     - GET /buoys/{buoy_id}/readings/{reading_id} - Get specific reading
+#     - GET /buoys/{buoy_id}/readings/search - Search readings by time
+#     - GET /buoys/{buoy_id}/readings/chart - Chart data (optimized)
+#
+#   ✅ Weather Stations API (Phase 3) - COMPLETE
+#     - GET /weather_stations - List stations with filtering and pagination
+#     - GET /weather_stations/{weather_station_id} - Get station details with 24h statistics
+#     - GET /weather_stations/{weather_station_id}/weather_readings - Historical readings
+#     - GET /weather_stations/{weather_station_id}/weather_readings/{reading_id} - Get specific reading
+#     - GET /weather_stations/{weather_station_id}/weather_readings/chart - Chart data
+#
+#   ✅ Conditions API (Phase 4) - DOCUMENTED
+#     - GET /conditions - Get all-in-one conditions (forecast + reading + tide) with standardized format
+#
+# Next Steps:
+# - Add comprehensive tests for all V2 endpoints
+# - Update SDK generation
+# - Performance testing
+#
+# Last Updated: 2025-11-01 - Added missing show endpoints for readings
+#
+# Recent Updates:
+# - Added GET /buoys/{buoy_id}/readings/{reading_id} endpoint for retrieving individual readings
+# - Added GET /weather_stations/{weather_station_id}/weather_readings/{reading_id} endpoint for retrieving individual weather readings
+# - Added Conditions API V2 endpoint documentation (GET /conditions) with comprehensive schema
+# - Documented structured response format with forecast, reading, tide, and metadata
+# - Added examples for both scenarios (with reading and forecast-only)
+# - Included optional spot_id parameter for enhanced context
+# - Standardized response follows {status, data, meta} format
+# - Updated authentication section to reflect BCrypt hashing and current API key generation status
+# - Fixed security scheme (removed incorrect JWT reference, clarified API key format)
+# - Added rate limit headers to all successful responses
+# - Updated error response format to match actual implementation (error, message, details, timestamp, request_id)
+# - Added rate limit details (1000 requests/hour, resets at top of hour)
+# - Documented that rate limit enforcement is pending (headers are set, but 429 responses not yet enforced)
+#
