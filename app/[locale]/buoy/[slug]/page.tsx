@@ -2,19 +2,18 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { fetchAllBuoys, fetchBuoyBySlug, fetchBuoyReadings, fetchNearestBuoys, fetchNearestSpots, slugify, getDirectionLabel, type Buoy, type BuoyReading, type NearbyBuoy, type Spot } from '@/lib/api/buoys';
-import type { Locale } from '@/middleware';
+import { locales, defaultLocale, type Locale } from '@/middleware';
 import { getServerContent } from '@/lib/i18n/server-content';
 import { ArrowLeft, MapPin, Navigation, Calendar, History, Waves, MapPinned } from 'lucide-react';
 
 type Props = {
-  params: Promise<{ locale: Locale; slug: string }> | { locale: Locale; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 };
 
 // Generate static params for all buoys
 export async function generateStaticParams() {
   try {
     const buoys = await fetchAllBuoys();
-    const locales = ['fr', 'en', 'es'];
     
     return locales.flatMap((locale) =>
       buoys.map((buoy) => ({
@@ -30,8 +29,8 @@ export async function generateStaticParams() {
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const resolvedParams = params instanceof Promise ? await params : params;
-  const { locale, slug } = resolvedParams;
+  const { locale: localeParam, slug } = await params;
+  const locale = (locales.includes(localeParam as Locale) ? localeParam : defaultLocale) as Locale;
   
   const buoy = await fetchBuoyBySlug(slug);
   
@@ -77,8 +76,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function BuoyDetailPage({ params }: Props) {
-  const resolvedParams = params instanceof Promise ? await params : params;
-  const { locale, slug } = resolvedParams;
+  const { locale: localeParam, slug } = await params;
+  const locale = (locales.includes(localeParam as Locale) ? localeParam : defaultLocale) as Locale;
   
   const buoy = await fetchBuoyBySlug(slug);
   

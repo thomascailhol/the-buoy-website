@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 
 /**
  * Wrapper component for translated text that suppresses hydration warnings
@@ -13,15 +13,14 @@ export function TranslatedText({
   ...props 
 }: { 
   children: ReactNode;
-  as?: keyof JSX.IntrinsicElements;
+  as?: React.ElementType;
   className?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }) {
-  const ComponentTag = Component as any;
   return (
-    <ComponentTag className={className} suppressHydrationWarning {...props}>
+    <Component className={className} suppressHydrationWarning {...props}>
       {children}
-    </ComponentTag>
+    </Component>
   );
 }
 

@@ -5,7 +5,7 @@ import { I18nProvider } from "@/components/I18nProvider";
 import LocaleScript from "@/components/LocaleScript";
 
 type Props = {
-  params: Promise<{ locale: Locale }> | { locale: Locale };
+  params: Promise<{ locale: string }>;
   children: React.ReactNode;
 };
 
@@ -14,8 +14,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const resolvedParams = params instanceof Promise ? await params : params;
-  const { locale } = resolvedParams;
+  const { locale: localeParam } = await params;
+  const locale = (locales.includes(localeParam as Locale) ? localeParam : defaultLocale) as Locale;
   const content = getServerContent(locale);
 
   // Build hreflang alternates
@@ -101,8 +101,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function LocaleLayout({ params, children }: Props) {
-  const resolvedParams = params instanceof Promise ? await params : params;
-  const { locale } = resolvedParams;
+  const { locale: localeParam } = await params;
+  const locale = (locales.includes(localeParam as Locale) ? localeParam : defaultLocale) as Locale;
   const content = getServerContent(locale);
 
   return (
