@@ -6,7 +6,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { fetchAllBuoys, slugify, type Buoy } from '@/lib/api/buoys';
 
-const MAPBOX_TOKEN = 'pk.eyJ1IjoidGhlc3VyZmtpdCIsImEiOiJjbWhlbzVsMDkwMWtkMnFzNjJnZHIzdncxIn0.HlnPjZcTwPrwEHhoIwi8-g';
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
 // Set token once globally
 mapboxgl.accessToken = MAPBOX_TOKEN;

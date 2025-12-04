@@ -686,6 +686,162 @@ paths:
       security:
         - ApiKeyAuth: []
 
+  /spots/nearest:
+    get:
+      tags: [Spots]
+      summary: Find nearest spot to coordinates
+      description: |
+        Find the closest surf spot(s) to a given latitude and longitude within a maximum distance.
+        
+        Uses an optimized two-step approach:
+        1. SQL-level bounding box filtering for fast candidate selection
+        2. Exact distance calculation only for candidates within the bounding box
+        
+        **Performance:** Optimized for speed using bounding box pre-filtering.
+        
+        **Limit:** Use the `limit` parameter to control how many results are returned (default: 1, max: 20).
+      operationId: nearestSpot
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          description: Latitude in decimal degrees (-90 to 90)
+          schema:
+            type: number
+            format: float
+            minimum: -90
+            maximum: 90
+          example: 43.5
+        - name: lng
+          in: query
+          required: true
+          description: Longitude in decimal degrees (-180 to 180)
+          schema:
+            type: number
+            format: float
+            minimum: -180
+            maximum: 180
+          example: -1.5
+        - name: max_distance
+          in: query
+          description: Maximum search radius in kilometers (default: 100)
+          schema:
+            type: number
+            format: float
+            default: 100.0
+            minimum: 0
+          example: 100
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default: 1, max: 20)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+            maximum: 20
+          example: 5
+      responses:
+        "200":
+          description: Successful response with nearest spot(s)
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    description: Response when limit=1 (single spot)
+                    properties:
+                      status:
+                        type: string
+                        example: "success"
+                      data:
+                        type: object
+                        properties:
+                          spot:
+                            $ref: "#/components/schemas/SpotWithDistance"
+                  - type: object
+                    description: Response when limit>1 (array of spots)
+                    properties:
+                      status:
+                        type: string
+                        example: "success"
+                      data:
+                        type: object
+                        properties:
+                          spots:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/SpotWithDistance"
+                          count:
+                            type: integer
+                            description: Number of spots returned
+              examples:
+                single_spot:
+                  summary: Single spot (limit=1 or default)
+                  value:
+                    status: "success"
+                    data:
+                      spot:
+                        id: 1
+                        name: "Côte des Basques"
+                        slug: "cote-des-basques"
+                        lat: 43.4832
+                        long: -1.5586
+                        country: "France"
+                        timezone: "Europe/Paris"
+                        is_magic: true
+                        webcam_url: "https://example.com/webcam"
+                        distance_km: 2.5
+                    meta:
+                      timestamp: "2025-11-01T10:00:00Z"
+                multiple_spots:
+                  summary: Multiple spots (limit>1)
+                  value:
+                    status: "success"
+                    data:
+                      spots:
+                        - id: 1
+                          name: "Côte des Basques"
+                          slug: "cote-des-basques"
+                          lat: 43.4832
+                          long: -1.5586
+                          country: "France"
+                          timezone: "Europe/Paris"
+                          is_magic: true
+                          webcam_url: "https://example.com/webcam"
+                          distance_km: 2.5
+                        - id: 2
+                          name: "Anglet"
+                          slug: "anglet"
+                          lat: 43.4900
+                          long: -1.5600
+                          country: "France"
+                          timezone: "Europe/Paris"
+                          is_magic: false
+                          webcam_url: null
+                          distance_km: 5.2
+                      count: 2
+                    meta:
+                      timestamp: "2025-11-01T10:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+          description: Missing or invalid lat/lng parameters
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+          description: No spot found within max_distance
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
   # ============================================================================
   # V2 BUOYS API
   # ============================================================================
@@ -918,6 +1074,153 @@ paths:
                   requested: 4
                 timestamp: "2025-11-01T10:00:00Z"
                 request_id: "550e8400-e29b-41d4-a716-446655440000"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+      security:
+        - ApiKeyAuth: []
+
+  /buoys/nearest:
+    get:
+      tags: [Buoys]
+      summary: Find nearest buoy to coordinates
+      description: |
+        Find the closest active buoy(s) to a given latitude and longitude within a maximum distance.
+        
+        Uses an optimized two-step approach:
+        1. SQL-level bounding box filtering for fast candidate selection
+        2. Exact distance calculation only for candidates within the bounding box
+        
+        **Performance:** Optimized for speed using bounding box pre-filtering.
+        
+        **Limit:** Use the `limit` parameter to control how many results are returned (default: 1, max: 20).
+      operationId: nearestBuoy
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          description: Latitude in decimal degrees (-90 to 90)
+          schema:
+            type: number
+            format: float
+            minimum: -90
+            maximum: 90
+          example: 43.5
+        - name: lng
+          in: query
+          required: true
+          description: Longitude in decimal degrees (-180 to 180)
+          schema:
+            type: number
+            format: float
+            minimum: -180
+            maximum: 180
+          example: -1.5
+        - name: max_distance
+          in: query
+          description: Maximum search radius in kilometers (default: 150)
+          schema:
+            type: number
+            format: float
+            default: 150.0
+            minimum: 0
+          example: 150
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default: 1, max: 20)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+            maximum: 20
+          example: 5
+      responses:
+        "200":
+          description: Successful response with nearest buoy(s)
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    description: Response when limit=1 (single buoy)
+                    properties:
+                      status:
+                        type: string
+                        example: "success"
+                      data:
+                        type: object
+                        properties:
+                          buoy:
+                            $ref: "#/components/schemas/BuoyWithDistance"
+                  - type: object
+                    description: Response when limit>1 (array of buoys)
+                    properties:
+                      status:
+                        type: string
+                        example: "success"
+                      data:
+                        type: object
+                        properties:
+                          buoys:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/BuoyWithDistance"
+                          count:
+                            type: integer
+                            description: Number of buoys returned
+              examples:
+                single_buoy:
+                  summary: Single buoy (limit=1 or default)
+                  value:
+                    status: "success"
+                    data:
+                      buoy:
+                        id: 10
+                        name: "Anglet"
+                        lat: 43.4832
+                        lng: -1.5586
+                        source: "Candhis"
+                        source_identifier: "64002"
+                        distance_km: 2.5
+                    meta:
+                      timestamp: "2025-11-01T10:00:00Z"
+                multiple_buoys:
+                  summary: Multiple buoys (limit>1)
+                  value:
+                    status: "success"
+                    data:
+                      buoys:
+                        - id: 10
+                          name: "Anglet"
+                          lat: 43.4832
+                          lng: -1.5586
+                          source: "Candhis"
+                          source_identifier: "64002"
+                          distance_km: 2.5
+                        - id: 11
+                          name: "Biarritz"
+                          lat: 43.4800
+                          lng: -1.5600
+                          source: "Candhis"
+                          source_identifier: "64003"
+                          distance_km: 5.8
+                      count: 2
+                    meta:
+                      timestamp: "2025-11-01T10:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+          description: Missing or invalid lat/lng parameters
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+          description: No buoy found within max_distance
         "429":
           $ref: "#/components/responses/RateLimitExceeded"
       security:
@@ -2647,12 +2950,16 @@ components:
         source:
           type: string
           description: Data source (e.g., "météo-france", "noaa")
+        source_identifier:
+          type: string
+          description: Source-specific identifier
         distance_km:
           type: number
           format: float
-          description: Distance from spot in kilometers
+          description: Distance from query coordinates in kilometers
         last_reading:
           type: object
+          nullable: true
           properties:
             significient_height:
               type: number
@@ -2663,6 +2970,37 @@ components:
             time:
               type: string
               format: date-time
+
+    SpotWithDistance:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        lat:
+          type: number
+          format: float
+        long:
+          type: number
+          format: float
+        country:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+        is_magic:
+          type: boolean
+        webcam_url:
+          type: string
+          format: uri
+          nullable: true
+        distance_km:
+          type: number
+          format: float
+          description: Distance from query coordinates in kilometers
 
     WeatherStationWithDistance:
       type: object
@@ -3194,11 +3532,13 @@ components:
 #     - GET /spots - List spots with filtering and pagination
 #     - GET /spots/{spot_id} - Get spot details with nearby buoys/stations
 #     - GET /spots/autocomplete - Search spots
+#     - GET /spots/nearest - Find nearest spot to coordinates
 #
 #   ✅ Buoys API (Phase 2) - COMPLETE
 #     - GET /buoys - List buoys with filtering and pagination
 #     - GET /buoys/{buoy_id} - Get buoy details with 24h statistics
 #     - GET /buoys/last_readings - Bulk fetch last readings (max 3)
+#     - GET /buoys/nearest - Find nearest buoy to coordinates
 #     - GET /buoys/{buoy_id}/readings - Historical readings with pagination
 #     - GET /buoys/{buoy_id}/readings/{reading_id} - Get specific reading
 #     - GET /buoys/{buoy_id}/readings/search - Search readings by time

@@ -1,10 +1,10 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { fetchAllBuoys, fetchBuoyBySlug, fetchBuoyReadings, slugify, getDirectionLabel, type Buoy, type BuoyReading } from '@/lib/api/buoys';
+import { fetchAllBuoys, fetchBuoyBySlug, fetchBuoyReadings, fetchNearestBuoys, fetchNearestSpots, slugify, getDirectionLabel, type Buoy, type BuoyReading, type NearbyBuoy, type Spot } from '@/lib/api/buoys';
 import type { Locale } from '@/middleware';
 import { getServerContent } from '@/lib/i18n/server-content';
-import { ArrowLeft, MapPin, Navigation, Calendar, History } from 'lucide-react';
+import { ArrowLeft, MapPin, Navigation, Calendar, History, Waves, MapPinned } from 'lucide-react';
 
 type Props = {
   params: Promise<{ locale: Locale; slug: string }> | { locale: Locale; slug: string };
@@ -88,6 +88,20 @@ export default async function BuoyDetailPage({ params }: Props) {
 
   // Fetch last 24 hours of readings
   const readings = await fetchBuoyReadings(buoy.id, 24);
+  
+  // Ensure lat/lng are numbers for API calls
+  const buoyLat = typeof buoy.lat === 'string' ? parseFloat(buoy.lat) : buoy.lat;
+  const buoyLng = typeof buoy.lng === 'string' ? parseFloat(buoy.lng) : buoy.lng;
+  
+  // Fetch nearest buoys and spots
+  const [nearestBuoys, nearestSpots] = await Promise.all([
+    fetchNearestBuoys(buoyLat, buoyLng, 200),
+    fetchNearestSpots(buoyLat, buoyLng, 200),
+  ]);
+  
+  // Filter out the current buoy from nearest buoys
+  const otherNearbyBuoys = nearestBuoys.filter(b => b.id !== buoy.id).slice(0, 5);
+  const nearbySpots = nearestSpots.slice(0, 5);
 
   const content = getServerContent(locale);
   const reading = buoy.last_reading;
@@ -122,6 +136,12 @@ export default async function BuoyDetailPage({ params }: Props) {
     last24Hours: string;
     time: string;
     noReadings: string;
+    nearbyBuoys: string;
+    nearbySpots: string;
+    kmAway: string;
+    noNearbyBuoys: string;
+    noNearbySpots: string;
+    viewBuoy: string;
   }> = {
     fr: {
       backToHome: 'Retour à l\'accueil',
@@ -146,6 +166,12 @@ export default async function BuoyDetailPage({ params }: Props) {
       last24Hours: 'Dernières 24 heures',
       time: 'Heure',
       noReadings: 'Aucune mesure disponible pour les dernières 24 heures',
+      nearbyBuoys: 'Bouées à proximité',
+      nearbySpots: 'Spots à proximité',
+      kmAway: 'km',
+      noNearbyBuoys: 'Aucune bouée à proximité',
+      noNearbySpots: 'Aucun spot à proximité',
+      viewBuoy: 'Voir la bouée',
     },
     en: {
       backToHome: 'Back to home',
@@ -170,6 +196,12 @@ export default async function BuoyDetailPage({ params }: Props) {
       last24Hours: 'Last 24 hours',
       time: 'Time',
       noReadings: 'No readings available for the last 24 hours',
+      nearbyBuoys: 'Nearby Buoys',
+      nearbySpots: 'Nearby Spots',
+      kmAway: 'km',
+      noNearbyBuoys: 'No nearby buoys found',
+      noNearbySpots: 'No nearby spots found',
+      viewBuoy: 'View buoy',
     },
     es: {
       backToHome: 'Volver al inicio',
@@ -194,6 +226,12 @@ export default async function BuoyDetailPage({ params }: Props) {
       last24Hours: 'Últimas 24 horas',
       time: 'Hora',
       noReadings: 'No hay mediciones disponibles para las últimas 24 horas',
+      nearbyBuoys: 'Boyas cercanas',
+      nearbySpots: 'Spots cercanos',
+      kmAway: 'km',
+      noNearbyBuoys: 'No se encontraron boyas cercanas',
+      noNearbySpots: 'No se encontraron spots cercanos',
+      viewBuoy: 'Ver boya',
     },
   };
 
@@ -337,6 +375,89 @@ export default async function BuoyDetailPage({ params }: Props) {
                 {text.noReadings}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Nearby Buoys & Spots */}
+        <div className="container max-w-5xl mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {/* Nearby Buoys */}
+            <div className="bg-card border rounded-xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <Waves className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold">{text.nearbyBuoys}</h2>
+              </div>
+              {otherNearbyBuoys.length > 0 ? (
+                <div className="space-y-3">
+                  {otherNearbyBuoys.map((nearbyBuoy) => (
+                    <Link
+                      key={nearbyBuoy.id}
+                      href={`/${locale}/buoy/${slugify(nearbyBuoy.name)}`}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                          {nearbyBuoy.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {nearbyBuoy.source}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                        {nearbyBuoy.last_reading?.significient_height != null && (
+                          <span className="text-sm font-semibold text-primary">
+                            {nearbyBuoy.last_reading.significient_height.toFixed(1)}m
+                          </span>
+                        )}
+                        <span className="text-xs text-muted-foreground bg-background px-2 py-1 rounded-full">
+                          {nearbyBuoy.distance_km.toFixed(0)} {text.kmAway}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  {text.noNearbyBuoys}
+                </p>
+              )}
+            </div>
+
+            {/* Nearby Spots */}
+            <div className="bg-card border rounded-xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <MapPinned className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold">{text.nearbySpots}</h2>
+              </div>
+              {nearbySpots.length > 0 ? (
+                <div className="space-y-3">
+                  {nearbySpots.map((spot) => (
+                    <div
+                      key={spot.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">
+                          {spot.name}
+                        </p>
+                        {spot.country && (
+                          <p className="text-xs text-muted-foreground">
+                            {spot.country}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground bg-background px-2 py-1 rounded-full flex-shrink-0 ml-3">
+                        {spot.distance_km.toFixed(0)} {text.kmAway}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  {text.noNearbySpots}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
