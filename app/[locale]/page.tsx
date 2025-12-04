@@ -1,4 +1,5 @@
 import Hero from '@/components/Hero';
+import BuoysMap from '@/components/BuoysMap';
 import Features from '@/components/Features';
 import Screenshots from '@/components/Screenshots';
 import About from '@/components/About';
@@ -29,6 +30,7 @@ export default async function Home({ params }: Props) {
     <main className="min-h-screen overflow-x-hidden">
       <LanguageSwitcher currentLocale={locale} />
       <Hero locale={locale} />
+      <BuoysMap />
       <Screenshots locale={locale} />
       <Features locale={locale} />
       <About locale={locale} />
