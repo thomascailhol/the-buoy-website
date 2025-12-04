@@ -8,6 +8,7 @@ import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { locales, defaultLocale, type Locale } from '@/middleware';
+import { fetchAllBuoys } from '@/lib/api/buoys';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -21,14 +22,14 @@ export default async function Home({ params }: Props) {
   const { locale: localeParam } = await params;
   const locale = (locales.includes(localeParam as Locale) ? localeParam : defaultLocale) as Locale;
   
-  // Content is server-rendered via getServerContent in components
-  // This ensures SEO content is in the initial HTML
+  // Fetch buoys on the server (has access to API key)
+  const buoys = await fetchAllBuoys().catch(() => []);
   
   return (
     <main className="min-h-screen overflow-x-hidden">
       <LanguageSwitcher currentLocale={locale} />
       <Hero locale={locale} />
-      <BuoysMap />
+      <BuoysMap buoys={buoys} locale={locale} />
       <Screenshots locale={locale} />
       <Features locale={locale} />
       <About locale={locale} />

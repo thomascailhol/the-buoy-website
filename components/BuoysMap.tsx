@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { fetchAllBuoys, slugify, type Buoy } from "@/lib/api/buoys";
+import { slugify, type Buoy } from "@/lib/api/buoys";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
@@ -16,42 +16,21 @@ interface MarkerData {
   cleanup: () => void;
 }
 
-export default function BuoysMap() {
+interface BuoysMapProps {
+  buoys: Buoy[];
+  locale: string;
+}
+
+export default function BuoysMap({ buoys, locale }: BuoysMapProps) {
   const router = useRouter();
-  const pathname = usePathname();
-  const locale = pathname?.split("/")[1] || "en";
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<MarkerData[]>([]);
   const mapLoaded = useRef(false);
 
-  const [buoys, setBuoys] = useState<Buoy[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch buoys data
-  useEffect(() => {
-    let isMounted = true;
-
-    fetchAllBuoys()
-      .then((data) => {
-        if (isMounted) {
-          setBuoys(data);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err.message);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const loading = buoys.length === 0;
+  const error: string | null = null;
 
   // Cleanup all markers
   const clearMarkers = useCallback(() => {
