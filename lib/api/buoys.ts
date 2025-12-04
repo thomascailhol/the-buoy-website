@@ -54,20 +54,31 @@ export interface BuoysResponse {
 
 export async function fetchAllBuoys(): Promise<Buoy[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/buoys?per_page=1000`, {
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'Accept': 'application/json',
-      },
-      next: { revalidate: 300 }, // Cache for 5 minutes
-    });
+    const allBuoys: Buoy[] = [];
+    let page = 1;
+    let totalPages = 1;
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch buoys: ${response.status} ${response.statusText}`);
-    }
+    // Paginate through all pages (API limits to 100 per page)
+    do {
+      const response = await fetch(`${API_BASE_URL}/buoys?per_page=100&page=${page}`, {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Accept': 'application/json',
+        },
+        next: { revalidate: 300 }, // Cache for 5 minutes
+      });
 
-    const data: BuoysResponse = await response.json();
-    return data.data.buoys;
+      if (!response.ok) {
+        throw new Error(`Failed to fetch buoys: ${response.status} ${response.statusText}`);
+      }
+
+      const data: BuoysResponse = await response.json();
+      allBuoys.push(...data.data.buoys);
+      totalPages = data.meta.total_pages;
+      page++;
+    } while (page <= totalPages);
+
+    return allBuoys;
   } catch (error) {
     console.error('Error fetching buoys:', error);
     throw error;
@@ -76,9 +87,23 @@ export async function fetchAllBuoys(): Promise<Buoy[]> {
 
 export async function fetchBuoyBySlug(slug: string): Promise<Buoy | null> {
   try {
-    const buoys = await fetchAllBuoys();
-    const buoy = buoys.find((b) => slugify(b.name) === slug);
-    return buoy || null;
+    const response = await fetch(`${API_BASE_URL}/buoys/${slug}`, {
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Accept': 'application/json',
+      },
+      next: { revalidate: 60 }, // Cache for 1 minute
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error(`Failed to fetch buoy: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.data?.buoy || null;
   } catch (error) {
     console.error('Error fetching buoy by slug:', error);
     return null;

@@ -6,26 +6,13 @@ import { locales, defaultLocale, type Locale } from '@/middleware';
 import { getServerContent } from '@/lib/i18n/server-content';
 import { ArrowLeft, MapPin, Navigation, Calendar, History, Waves, MapPinned } from 'lucide-react';
 
+// This makes the page dynamic - data is fetched fresh on each request
+// But still server-rendered for SEO (content is in HTML)
+export const dynamic = 'force-dynamic';
+
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
 };
-
-// Generate static params for all buoys
-export async function generateStaticParams() {
-  try {
-    const buoys = await fetchAllBuoys();
-    
-    return locales.flatMap((locale) =>
-      buoys.map((buoy) => ({
-        locale,
-        slug: slugify(buoy.name),
-      }))
-    );
-  } catch (error) {
-    console.error('Error generating static params:', error);
-    return [];
-  }
-}
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

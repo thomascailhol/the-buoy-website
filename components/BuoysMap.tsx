@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import { fetchAllBuoys, slugify, type Buoy } from '@/lib/api/buoys';
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { fetchAllBuoys, slugify, type Buoy } from "@/lib/api/buoys";
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
 // Set token once globally
 mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -19,13 +19,13 @@ interface MarkerData {
 export default function BuoysMap() {
   const router = useRouter();
   const pathname = usePathname();
-  const locale = pathname?.split('/')[1] || 'en';
-  
+  const locale = pathname?.split("/")[1] || "en";
+
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<MarkerData[]>([]);
   const mapLoaded = useRef(false);
-  
+
   const [buoys, setBuoys] = useState<Buoy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export default function BuoysMap() {
   // Fetch buoys data
   useEffect(() => {
     let isMounted = true;
-    
+
     fetchAllBuoys()
       .then((data) => {
         if (isMounted) {
@@ -63,104 +63,110 @@ export default function BuoysMap() {
   }, []);
 
   // Navigate to buoy detail page
-  const navigateToBuoy = useCallback((buoy: Buoy) => {
-    const slug = slugify(buoy.name);
-    router.push(`/${locale}/buoy/${slug}`);
-  }, [router, locale]);
+  const navigateToBuoy = useCallback(
+    (buoy: Buoy) => {
+      const slug = slugify(buoy.name);
+      router.push(`/${locale}/buoy/${slug}`);
+    },
+    [router, locale]
+  );
 
   // Create a marker for a buoy
-  const createBuoyMarker = useCallback((buoy: Buoy, mapInstance: mapboxgl.Map): MarkerData | null => {
-    if (!buoy.lat || !buoy.lng) return null;
+  const createBuoyMarker = useCallback(
+    (buoy: Buoy, mapInstance: mapboxgl.Map): MarkerData | null => {
+      if (!buoy.lat || !buoy.lng) return null;
 
-    // Create marker container
-    const container = document.createElement('div');
-    container.className = 'buoy-marker-container';
-    Object.assign(container.style, {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      cursor: 'pointer',
-    });
-
-    // Create marker dot
-    const el = document.createElement('div');
-    el.className = 'buoy-marker';
-    Object.assign(el.style, {
-      width: '14px',
-      height: '14px',
-      borderRadius: '50%',
-      backgroundColor: '#3b82f6',
-      border: '2px solid white',
-      boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
-      transition: 'all 0.2s ease',
-    });
-
-    container.appendChild(el);
-
-    // Create wave height label if available
-    if (buoy.last_reading?.significient_height) {
-      const label = document.createElement('div');
-      label.className = 'buoy-label';
-      label.textContent = `${buoy.last_reading.significient_height.toFixed(1)}m`;
-      Object.assign(label.style, {
-        marginTop: '2px',
-        fontSize: '10px',
-        fontWeight: '600',
-        color: '#1f2937',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        padding: '1px 4px',
-        borderRadius: '4px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-        whiteSpace: 'nowrap',
-        transition: 'all 0.2s ease',
+      // Create marker container
+      const container = document.createElement("div");
+      container.className = "buoy-marker-container";
+      Object.assign(container.style, {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        cursor: "pointer",
       });
-      container.appendChild(label);
-    }
 
-    // Create marker using the container (no popup, direct navigation on click)
-    const marker = new mapboxgl.Marker({ element: container, anchor: 'top' })
-      .setLngLat([buoy.lng, buoy.lat])
-      .addTo(mapInstance);
-
-    // Marker hover handlers
-    const handleMarkerEnter = () => {
-      // Visual feedback on the dot
+      // Create marker dot
+      const el = document.createElement("div");
+      el.className = "buoy-marker";
       Object.assign(el.style, {
-        width: '18px',
-        height: '18px',
-        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.6)',
-        border: '3px solid white',
+        width: "14px",
+        height: "14px",
+        borderRadius: "50%",
+        backgroundColor: "#3b82f6",
+        border: "2px solid white",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
+        transition: "all 0.2s ease",
       });
-    };
 
-    const handleMarkerLeave = () => {
-      // Reset visual on the dot
-      Object.assign(el.style, {
-        width: '14px',
-        height: '14px',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
-        border: '2px solid white',
-      });
-    };
+      container.appendChild(el);
 
-    // Click handler to navigate to detail page
-    const handleMarkerClick = () => {
-      navigateToBuoy(buoy);
-    };
+      // Create wave height label if available
+      if (buoy.last_reading?.significient_height) {
+        const label = document.createElement("div");
+        label.className = "buoy-label";
+        label.textContent = `${buoy.last_reading.significient_height.toFixed(1)}m`;
+        Object.assign(label.style, {
+          marginTop: "2px",
+          fontSize: "10px",
+          fontWeight: "600",
+          color: "#1f2937",
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          padding: "1px 4px",
+          borderRadius: "4px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+          whiteSpace: "nowrap",
+          transition: "all 0.2s ease",
+        });
+        container.appendChild(label);
+      }
 
-    container.addEventListener('mouseenter', handleMarkerEnter);
-    container.addEventListener('mouseleave', handleMarkerLeave);
-    container.addEventListener('click', handleMarkerClick);
+      // Create marker using the container (no popup, direct navigation on click)
+      const marker = new mapboxgl.Marker({ element: container, anchor: "top" })
+        .setLngLat([buoy.lng, buoy.lat])
+        .addTo(mapInstance);
 
-    // Cleanup function
-    const cleanup = () => {
-      container.removeEventListener('mouseenter', handleMarkerEnter);
-      container.removeEventListener('mouseleave', handleMarkerLeave);
-      container.removeEventListener('click', handleMarkerClick);
-    };
+      // Marker hover handlers
+      const handleMarkerEnter = () => {
+        // Visual feedback on the dot
+        Object.assign(el.style, {
+          width: "18px",
+          height: "18px",
+          boxShadow: "0 4px 12px rgba(59, 130, 246, 0.6)",
+          border: "3px solid white",
+        });
+      };
 
-    return { marker, cleanup };
-  }, [locale, navigateToBuoy]);
+      const handleMarkerLeave = () => {
+        // Reset visual on the dot
+        Object.assign(el.style, {
+          width: "14px",
+          height: "14px",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
+          border: "2px solid white",
+        });
+      };
+
+      // Click handler to navigate to detail page
+      const handleMarkerClick = () => {
+        navigateToBuoy(buoy);
+      };
+
+      container.addEventListener("mouseenter", handleMarkerEnter);
+      container.addEventListener("mouseleave", handleMarkerLeave);
+      container.addEventListener("click", handleMarkerClick);
+
+      // Cleanup function
+      const cleanup = () => {
+        container.removeEventListener("mouseenter", handleMarkerEnter);
+        container.removeEventListener("mouseleave", handleMarkerLeave);
+        container.removeEventListener("click", handleMarkerClick);
+      };
+
+      return { marker, cleanup };
+    },
+    [locale, navigateToBuoy]
+  );
 
   // Initialize map (only after loading is complete and container exists)
   useEffect(() => {
@@ -168,20 +174,20 @@ export default function BuoysMap() {
 
     const mapInstance = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: "mapbox://styles/mapbox/light-v11",
       center: [-3, 47], // Center on Atlantic coast
       zoom: 4,
       attributionControl: false,
       failIfMajorPerformanceCaveat: false, // Allow software rendering fallback
     });
 
-    mapInstance.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    mapInstance.addControl(new mapboxgl.NavigationControl(), "top-right");
     mapInstance.addControl(
       new mapboxgl.AttributionControl({ compact: true }),
-      'bottom-right'
+      "bottom-right"
     );
 
-    mapInstance.on('load', () => {
+    mapInstance.on("load", () => {
       mapLoaded.current = true;
       // Trigger resize to ensure proper rendering
       mapInstance.resize();
@@ -193,7 +199,7 @@ export default function BuoysMap() {
         mapInstance.resize();
       }
     });
-    
+
     if (mapContainer.current) {
       resizeObserver.observe(mapContainer.current);
     }
@@ -247,11 +253,11 @@ export default function BuoysMap() {
     if (mapLoaded.current) {
       addMarkers();
     } else {
-      mapInstance.on('load', addMarkers);
+      mapInstance.on("load", addMarkers);
     }
 
     return () => {
-      mapInstance.off('load', addMarkers);
+      mapInstance.off("load", addMarkers);
     };
   }, [buoys, createBuoyMarker, clearMarkers]);
 
@@ -281,14 +287,18 @@ export default function BuoysMap() {
   }
 
   return (
-    <section id="buoys-map" className="py-20 px-4 bg-gradient-to-b from-background to-accent/10 overflow-x-hidden">
+    <section
+      id="buoys-map"
+      className="py-20 px-4 bg-gradient-to-b from-background to-accent/10 overflow-x-hidden"
+    >
       <div className="container max-w-7xl mx-auto">
         <header className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Explore Our Buoy Network
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Real-time ocean data from {buoys.length} buoys across France, Spain, Portugal, UK, and Ireland
+            Real-time ocean data from {buoys.length} buoys across France, Spain,
+            Portugal, UK, and Ireland
           </p>
         </header>
         <div className="relative w-full h-[600px] md:h-[700px] rounded-2xl overflow-hidden shadow-2xl border border-border">
