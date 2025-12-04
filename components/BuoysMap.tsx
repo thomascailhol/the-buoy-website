@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { fetchAllBuoys, type Buoy } from '@/lib/api/buoys';
+import { fetchAllBuoys, slugify, type Buoy } from '@/lib/api/buoys';
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoidGhlc3VyZmtpdCIsImEiOiJjbWhlbzVsMDkwMWtkMnFzNjJnZHIzdncxIn0.HlnPjZcTwPrwEHhoIwi8-g';
 
@@ -12,11 +13,14 @@ mapboxgl.accessToken = MAPBOX_TOKEN;
 
 interface MarkerData {
   marker: mapboxgl.Marker;
-  popup: mapboxgl.Popup;
   cleanup: () => void;
 }
 
 export default function BuoysMap() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const locale = pathname?.split('/')[1] || 'en';
+  
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<MarkerData[]>([]);
@@ -57,6 +61,12 @@ export default function BuoysMap() {
     });
     markers.current = [];
   }, []);
+
+  // Navigate to buoy detail page
+  const navigateToBuoy = useCallback((buoy: Buoy) => {
+    const slug = slugify(buoy.name);
+    router.push(`/${locale}/buoy/${slug}`);
+  }, [router, locale]);
 
   // Create a marker for a buoy
   const createBuoyMarker = useCallback((buoy: Buoy, mapInstance: mapboxgl.Map): MarkerData | null => {
@@ -107,59 +117,13 @@ export default function BuoysMap() {
       container.appendChild(label);
     }
 
-    // Create popup
-    const popup = new mapboxgl.Popup({
-      offset: 25,
-      closeOnClick: false,
-      closeButton: true,
-      closeOnMove: false,
-      maxWidth: '280px',
-    }).setHTML(`
-      <div style="padding: 4px;">
-        <strong style="font-size: 14px; color: #1f2937;">${buoy.name}</strong>
-        ${buoy.source ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${buoy.source}</div>` : ''}
-        ${buoy.last_reading?.significient_height ? `
-          <div style="margin-top: 6px; font-size: 12px; color: #374151;">
-            <div>Wave: ${buoy.last_reading.significient_height.toFixed(1)}m</div>
-            ${buoy.last_reading.period ? `<div>Period: ${buoy.last_reading.period.toFixed(1)}s</div>` : ''}
-            ${buoy.last_reading.water_temperature ? `<div>Water: ${buoy.last_reading.water_temperature.toFixed(1)}°C</div>` : ''}
-          </div>
-        ` : ''}
-      </div>
-    `);
-
-    // Create marker using the container
+    // Create marker using the container (no popup, direct navigation on click)
     const marker = new mapboxgl.Marker({ element: container, anchor: 'top' })
       .setLngLat([buoy.lng, buoy.lat])
-      .setPopup(popup)
       .addTo(mapInstance);
-
-    // State for hover management
-    let isHoveringMarker = false;
-    let isHoveringPopup = false;
-    let closeTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    const clearCloseTimeout = () => {
-      if (closeTimeout) {
-        clearTimeout(closeTimeout);
-        closeTimeout = null;
-      }
-    };
-
-    const scheduleClose = () => {
-      clearCloseTimeout();
-      closeTimeout = setTimeout(() => {
-        if (!isHoveringMarker && !isHoveringPopup && popup.isOpen()) {
-          marker.togglePopup();
-        }
-      }, 200);
-    };
 
     // Marker hover handlers
     const handleMarkerEnter = () => {
-      isHoveringMarker = true;
-      clearCloseTimeout();
-      
       // Visual feedback on the dot
       Object.assign(el.style, {
         width: '18px',
@@ -167,15 +131,9 @@ export default function BuoysMap() {
         boxShadow: '0 4px 12px rgba(59, 130, 246, 0.6)',
         border: '3px solid white',
       });
-      
-      if (!popup.isOpen()) {
-        marker.togglePopup();
-      }
     };
 
     const handleMarkerLeave = () => {
-      isHoveringMarker = false;
-      
       // Reset visual on the dot
       Object.assign(el.style, {
         width: '14px',
@@ -183,44 +141,26 @@ export default function BuoysMap() {
         boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
         border: '2px solid white',
       });
-      
-      scheduleClose();
+    };
+
+    // Click handler to navigate to detail page
+    const handleMarkerClick = () => {
+      navigateToBuoy(buoy);
     };
 
     container.addEventListener('mouseenter', handleMarkerEnter);
     container.addEventListener('mouseleave', handleMarkerLeave);
-
-    // Popup hover handlers
-    const handlePopupOpen = () => {
-      const popupEl = popup.getElement();
-      if (!popupEl) return;
-
-      const handlePopupEnter = () => {
-        isHoveringPopup = true;
-        clearCloseTimeout();
-      };
-
-      const handlePopupLeave = () => {
-        isHoveringPopup = false;
-        scheduleClose();
-      };
-
-      popupEl.addEventListener('mouseenter', handlePopupEnter);
-      popupEl.addEventListener('mouseleave', handlePopupLeave);
-    };
-
-    popup.on('open', handlePopupOpen);
+    container.addEventListener('click', handleMarkerClick);
 
     // Cleanup function
     const cleanup = () => {
-      clearCloseTimeout();
       container.removeEventListener('mouseenter', handleMarkerEnter);
       container.removeEventListener('mouseleave', handleMarkerLeave);
-      popup.off('open', handlePopupOpen);
+      container.removeEventListener('click', handleMarkerClick);
     };
 
-    return { marker, popup, cleanup };
-  }, []);
+    return { marker, cleanup };
+  }, [locale, navigateToBuoy]);
 
   // Initialize map (only after loading is complete and container exists)
   useEffect(() => {
