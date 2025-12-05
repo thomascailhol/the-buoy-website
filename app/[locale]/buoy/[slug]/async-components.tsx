@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Navigation, History, Waves, MapPinned } from "lucide-react";
+import { Navigation2, History, Waves, MapPinned } from "lucide-react";
 import {
   fetchBuoyReadings,
   fetchNearestBuoys,
@@ -215,11 +215,12 @@ async function ReadingsTableBody({
             <td className="text-center py-3 px-2">
               {r.direction != null ? (
                 <span className="inline-flex items-center gap-1">
-                  <Navigation
+                  <Navigation2
                     className="h-3 w-3 text-muted-foreground"
                     style={{
-                      transform: `rotate(${r.direction}deg)`,
+                      transform: `rotate(${r.direction + 180}deg)`,
                       transformOrigin: "center",
+                      display: "inline-block",
                     }}
                   />
                   {r.direction}° {getDirectionLabel(r.direction)}
