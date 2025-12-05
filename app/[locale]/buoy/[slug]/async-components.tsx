@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Navigation2, History, Waves, MapPinned } from "lucide-react";
+import { Navigation2, Waves, MapPinned } from "lucide-react";
 import {
   fetchBuoyReadings,
   fetchNearestBuoys,
@@ -72,15 +72,12 @@ export function ReadingsTable({
   const text = content.buoy;
 
   return (
-    <div className="bg-card border rounded-xl p-6 mb-8 shadow-sm">
+    <div className="bg-card border rounded-xl mb-8 shadow-sm pb-6">
       {/* Static Header - always visible */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <History className="h-6 w-6 text-primary" />
-          <div>
-            <h2 className="text-xl font-bold">{text.recentReadings}</h2>
-            <p className="text-sm text-muted-foreground">{text.last24Hours}</p>
-          </div>
+      <div className="flex items-center justify-between mb-6 px-6 pt-6">
+        <div>
+          <h2 className="text-xl font-bold">{text.recentReadings}</h2>
+          <p className="text-sm text-muted-foreground">{text.last24Hours}</p>
         </div>
         <PerPageSelector
           currentPerPage={perPage}
@@ -189,12 +186,20 @@ async function ReadingsTableBody({
             <td className="py-3 px-2 font-medium whitespace-nowrap">
               {formatTime(r.time, locale, timezone)}
             </td>
-            <td className="p-0 align-middle">
+            <td
+              className={`p-0 align-middle ${r.significient_height != null ? "md:bg-transparent bg-blue-500" : ""}`}
+            >
               {r.significient_height != null ? (
-                <div className="bg-blue-500 text-white px-2 md:px-4 py-1 md:py-3 text-center">
+                <div className="bg-blue-500 md:bg-blue-500 text-white px-2 md:px-4 py-1 md:py-3 h-full text-center flex flex-col items-center justify-center">
                   <div className="font-bold text-sm md:text-base whitespace-nowrap">
                     {r.significient_height.toFixed(1)}m
                   </div>
+                  {(r.energy_per_wave != null || r.energy != null) && (
+                    <div className="text-xs opacity-90 whitespace-nowrap mt-0.5">
+                      {Math.round(r.energy_per_wave ?? r.energy ?? 0)}{" "}
+                      {content.buoy.energyUnit || "kJ"}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-3 px-2">-</div>
@@ -202,7 +207,7 @@ async function ReadingsTableBody({
             </td>
             <td className="text-center py-3 px-2">
               {r.maximum_height != null ? (
-                <span className="text-destructive">
+                <span className="text-foreground">
                   {r.maximum_height.toFixed(1)}m
                 </span>
               ) : (
@@ -254,7 +259,7 @@ async function ReadingsTableBody({
       {pagination.totalPages > 1 && (
         <tfoot>
           <tr>
-            <td colSpan={7} className="pt-6">
+            <td colSpan={7} className="pt-6 px-6 pb-6">
               <PaginationControls
                 currentPage={pagination.page}
                 totalPages={pagination.totalPages}

@@ -73,16 +73,10 @@ export default async function BuoyDetailPage({ params, searchParams }: Props) {
     <main className="min-h-screen bg-background">
       <BuoyNavigation locale={locale} />
 
-      <BuoyHero
-        buoy={buoy}
-        locale={locale}
-        lat={lat}
-        lng={lng}
-        lastUpdate={lastUpdate}
-      />
+      <BuoyHero buoy={buoy} locale={locale} />
 
       {/* Main Content */}
-      <section className="py-8">
+      <section className="pt-2 pb-8">
         {/* Readings History Table - has internal Suspense for table rows */}
         <div className="container max-w-5xl mx-auto px-4">
           <ReadingsTable
