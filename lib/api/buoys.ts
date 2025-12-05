@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.SURFKIT_API_BASE_URL || 'https://thesurfkit.com/api/v2';
+const API_BASE_URL = process.env.SURFKIT_API_BASE_URL || 'http://localhost:3000/api/v2';
 const API_KEY = process.env.SURFKIT_API_KEY || '';
 
 export interface Buoy {
@@ -92,7 +92,7 @@ export async function fetchBuoyBySlug(slug: string): Promise<Buoy | null> {
         'Authorization': `Bearer ${API_KEY}`,
         'Accept': 'application/json',
       },
-      next: { revalidate: 60 }, // Cache for 1 minute
+      next: { revalidate: 300 }, // Cache for 5 minutes
     });
 
     if (!response.ok) {
@@ -243,7 +243,10 @@ export async function fetchNearestBuoys(
     );
 
     if (!response.ok) {
-      console.error('Failed to fetch nearest buoys:', response.status);
+      // 404 means no buoys found nearby - this is expected, not an error
+      if (response.status !== 404) {
+        console.error('Failed to fetch nearest buoys:', response.status);
+      }
       return [];
     }
 
@@ -280,7 +283,10 @@ export async function fetchNearestSpots(
     );
 
     if (!response.ok) {
-      console.error('Failed to fetch nearest spots:', response.status);
+      // 404 means no spots found nearby - this is expected, not an error
+      if (response.status !== 404) {
+        console.error('Failed to fetch nearest spots:', response.status);
+      }
       return [];
     }
 
