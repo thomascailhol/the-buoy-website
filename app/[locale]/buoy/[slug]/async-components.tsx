@@ -205,10 +205,21 @@ async function ReadingsTableBody({
             <td className="py-3 px-2 font-medium whitespace-nowrap">
               {formatTime(r.time, locale, timezone)}
             </td>
-            <td className="p-0 align-middle">
+            <td
+              className="p-0 align-middle"
+              style={
+                r.significient_height != null
+                  ? {
+                      backgroundColor: getWaveHeightBackgroundColor(
+                        r.significient_height
+                      ),
+                    }
+                  : undefined
+              }
+            >
               {r.significient_height != null ? (
                 <div
-                  className="text-white px-2 md:px-4 py-1 md:py-3 h-full min-h-full text-center flex flex-col items-center justify-center"
+                  className="text-white px-2 md:px-4 py-1 md:py-3 w-full h-full text-center flex flex-col items-center justify-center"
                   style={{
                     backgroundColor: getWaveHeightBackgroundColor(
                       r.significient_height
