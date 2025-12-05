@@ -50,6 +50,25 @@ function getTimezoneDisplay(timezone?: string): string {
   }
 }
 
+// Get background color for wave height cell based on significant wave height
+function getWaveHeightBackgroundColor(height?: number | null): string {
+  if (height === null || height === undefined) return "#9fb9bf";
+
+  if (height >= 12) return "#9a7f9b";
+  if (height >= 10) return "#bfbfbf";
+  if (height >= 7) return "#bf6757";
+  if (height >= 5) return "#bf335f";
+  if (height >= 4) return "#853030";
+  if (height >= 3) return "#9a3097";
+  if (height >= 2.5) return "#bb5abf";
+  if (height >= 2) return "#393c8e";
+  if (height >= 1.5) return "#3868bf";
+  if (height >= 1) return "#30628d";
+  if (height >= 0.5) return "#309db9";
+
+  return "#9fb9bf";
+}
+
 import { ReadingsTableRowsSkeleton } from "./skeletons";
 
 // Wrapper component for readings table (renders static header + async content)
@@ -186,11 +205,16 @@ async function ReadingsTableBody({
             <td className="py-3 px-2 font-medium whitespace-nowrap">
               {formatTime(r.time, locale, timezone)}
             </td>
-            <td
-              className={`p-0 align-middle ${r.significient_height != null ? "md:bg-transparent bg-blue-500" : ""}`}
-            >
+            <td className="p-0 align-middle">
               {r.significient_height != null ? (
-                <div className="bg-blue-500 md:bg-blue-500 text-white px-2 md:px-4 py-1 md:py-3 h-full text-center flex flex-col items-center justify-center">
+                <div
+                  className="text-white px-2 md:px-4 py-1 md:py-3 h-full min-h-full text-center flex flex-col items-center justify-center"
+                  style={{
+                    backgroundColor: getWaveHeightBackgroundColor(
+                      r.significient_height
+                    ),
+                  }}
+                >
                   <div className="font-bold text-sm md:text-base whitespace-nowrap">
                     {r.significient_height.toFixed(1)}m
                   </div>
