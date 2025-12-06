@@ -143,12 +143,12 @@ export default async function BuoyDetailPage({ params, searchParams }: Props) {
   const currentPage = page ? parseInt(page, 10) : 1;
   const validPage = currentPage > 0 ? currentPage : 1;
 
-  // Parse per_page from search params, default to 20, validate against allowed values
+  // Parse per_page from search params, default to 10, validate against allowed values
   const allowedPerPage = [10, 20, 50, 100];
-  const parsedPerPage = per_page ? parseInt(per_page, 10) : 20;
+  const parsedPerPage = per_page ? parseInt(per_page, 10) : 10;
   const validPerPage = allowedPerPage.includes(parsedPerPage)
     ? parsedPerPage
-    : 20;
+    : 10;
 
   return (
     <main className="min-h-screen bg-background">
