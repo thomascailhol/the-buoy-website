@@ -18,7 +18,7 @@ export function BuoyInformation({
   const content = getServerContent(locale);
 
   return (
-    <div className="bg-muted/50 border rounded-xl p-6 mb-8">
+    <div className="bg-muted/50 border rounded-xl p-6 mb-8 animate-on-load animate-fade-in-up animation-delay-200">
       <h2 className="text-xl font-bold mb-4">{content.buoy.aboutBuoy}</h2>
       <div className="space-y-4">
         <div>

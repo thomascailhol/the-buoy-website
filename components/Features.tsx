@@ -25,10 +25,12 @@ export default function Features({ locale }: { locale: Locale }) {
       description: content.features.coverage.description,
     },
   ];
+  const animationDelays = ["", "animation-delay-100", "animation-delay-200"];
+
   return (
     <section className="py-20 px-4 bg-accent overflow-x-hidden">
       <div className="container max-w-6xl mx-auto">
-        <header className="text-center mb-16">
+        <header className="text-center mb-16 animate-on-load animate-fade-in-up">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">
             {content.features.title}
           </h2>
@@ -37,7 +39,10 @@ export default function Features({ locale }: { locale: Locale }) {
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <article key={index} className="bg-card p-6 rounded-2xl hover:shadow-lg transition-all hover:scale-105">
+              <article
+                key={index}
+                className={`bg-card p-6 rounded-2xl hover:shadow-lg transition-all hover:scale-105 animate-on-load animate-fade-in-up ${animationDelays[index] || ""}`}
+              >
                 <div className="bg-primary w-12 h-12 rounded-xl flex items-center justify-center mb-4">
                   <Icon className="h-6 w-6 text-primary-foreground" />
                 </div>

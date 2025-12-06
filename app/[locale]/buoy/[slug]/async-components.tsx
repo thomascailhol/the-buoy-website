@@ -85,7 +85,7 @@ export function ReadingsTable({
   const text = content.buoy;
 
   return (
-    <div className="bg-card border rounded-xl mb-8 shadow-sm pb-6">
+    <div className="bg-card border rounded-xl mb-8 shadow-sm pb-6 animate-on-load animate-fade-in-up animation-delay-100">
       {/* Static Header - always visible */}
       <div className="flex items-center justify-between mb-6 px-6 pt-6">
         <div>

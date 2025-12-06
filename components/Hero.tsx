@@ -19,16 +19,16 @@ export default function Hero({ locale }: { locale: Locale }) {
               alt="La Bouée - Application de conditions de surf en temps réel" 
               width={200}
               height={64}
-              className="h-12 md:h-16 mx-auto lg:mx-0 w-auto"
+              className="h-12 md:h-16 mx-auto lg:mx-0 w-auto animate-on-load animate-fade-in-down"
               priority
             />
-            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight animate-on-load animate-fade-in-up animation-delay-100">
               {content.hero.title}
             </h1>
-            <p className="text-base md:text-lg lg:text-xl opacity-90 max-w-xl mx-auto lg:mx-0">
+            <p className="text-base md:text-lg lg:text-xl opacity-90 max-w-xl mx-auto lg:mx-0 animate-on-load animate-fade-in-up animation-delay-200">
               {content.hero.subtitle}
             </p>
-            <div className="flex flex-col items-center lg:items-start gap-4 w-full">
+            <div className="flex flex-col items-center lg:items-start gap-4 w-full animate-on-load animate-fade-in-up animation-delay-300">
               <a 
                 href="https://apps.apple.com/fr/app/la-bou%C3%A9e/id6476977153" 
                 target="_blank" 
@@ -61,7 +61,7 @@ export default function Hero({ locale }: { locale: Locale }) {
               </a>
             </div>
           </div>
-          <div className="relative w-full max-w-sm mx-auto">
+          <div className="relative w-full max-w-sm mx-auto animate-on-load animate-slide-in-right animation-delay-200">
             <Image 
               src="/assets/screenshot-1.png" 
               alt="Capture d'écran de l'application La Bouée montrant les bouées favorites et les conditions de surf" 

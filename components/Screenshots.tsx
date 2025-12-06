@@ -19,17 +19,22 @@ export default function Screenshots({ locale }: { locale: Locale }) {
       alt: content.screenshots.forecast,
     },
   ];
+  const animationDelays = ["", "animation-delay-100", "animation-delay-200"];
+
   return (
     <section className="py-20 px-4 bg-gradient-to-b from-accent/20 to-background overflow-x-hidden">
       <div className="container max-w-6xl mx-auto">
-        <header className="text-center mb-16">
+        <header className="text-center mb-16 animate-on-load animate-fade-in-up">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">
             {content.screenshots.title}
           </h2>
         </header>
         <div className="grid md:grid-cols-3 gap-8">
           {screenshots.map((screenshot, index) => (
-            <div key={index} className="relative w-full">
+            <div
+              key={index}
+              className={`relative w-full animate-on-load animate-scale-in ${animationDelays[index] || ""}`}
+            >
               <Image
                 src={screenshot.src}
                 alt={screenshot.alt}

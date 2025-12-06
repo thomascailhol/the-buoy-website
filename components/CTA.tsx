@@ -8,13 +8,13 @@ export default function CTA({ locale }: { locale: Locale }) {
   return (
     <section className="py-20 px-4 bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground overflow-x-hidden">
       <div className="container max-w-4xl mx-auto text-center">
-        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6">
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6 animate-on-load animate-fade-in-up">
           {content.cta.title}
         </h2>
-        <p className="text-base md:text-lg mb-8 opacity-90">
+        <p className="text-base md:text-lg mb-8 opacity-90 animate-on-load animate-fade-in-up animation-delay-100">
           {content.cta.subtitle}
         </p>
-        <div className="flex flex-col items-center gap-4 w-full">
+        <div className="flex flex-col items-center gap-4 w-full animate-on-load animate-fade-in-up animation-delay-200">
           <a 
             href="https://apps.apple.com/fr/app/la-bou%C3%A9e/id6476977153"
             target="_blank"

@@ -10,7 +10,7 @@ export function BuoyCTA({ locale }: BuoyCTAProps) {
   const content = getServerContent(locale);
 
   return (
-    <div className="bg-primary/5 rounded-xl p-8 text-center">
+    <div className="bg-primary/5 rounded-xl p-8 text-center animate-on-load animate-fade-in-up animation-delay-400">
       <h2 className="text-2xl font-bold mb-4">{content.buoy.viewOtherBuoys}</h2>
       <p className="text-muted-foreground mb-6">
         {content.buoy.exploreOtherBuoys}

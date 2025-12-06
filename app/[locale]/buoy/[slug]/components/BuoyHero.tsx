@@ -13,13 +13,13 @@ export function BuoyHero({ buoy, locale }: BuoyHeroProps) {
   return (
     <header className="bg-gradient-to-b from-primary/5 to-background py-4 md:py-12 px-4">
       <div className="container max-w-5xl mx-auto">
-        <div className="mb-2 md:mb-4">
+        <div className="mb-2 md:mb-4 animate-on-load animate-fade-in-up">
           <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-foreground mb-1 md:mb-2">
             {content.buoy.buoyTitle} {buoy.name}
           </h1>
         </div>
         {buoy.source && (
-          <div className="mt-1 md:mt-2 text-xs md:text-sm text-muted-foreground">
+          <div className="mt-1 md:mt-2 text-xs md:text-sm text-muted-foreground animate-on-load animate-fade-in-up animation-delay-100">
             {content.buoy.source}:{" "}
             <span className="font-medium">{buoy.source}</span>
           </div>

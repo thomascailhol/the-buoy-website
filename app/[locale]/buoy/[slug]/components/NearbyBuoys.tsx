@@ -34,7 +34,7 @@ export async function NearbyBuoys({
 
   if (otherBuoys.length === 0) {
     return (
-      <div className="bg-card border rounded-xl p-6 mb-8">
+      <div className="bg-card border rounded-xl p-6 mb-8 animate-on-load animate-fade-in-up animation-delay-300">
         <h2 className="text-xl font-bold mb-4">{content.buoy.nearbyBuoys}</h2>
         <p className="text-sm text-muted-foreground">
           {content.buoy.noNearbyBuoys}
@@ -44,7 +44,7 @@ export async function NearbyBuoys({
   }
 
   return (
-    <div className="bg-card border rounded-xl p-6 mb-8">
+    <div className="bg-card border rounded-xl p-6 mb-8 animate-on-load animate-fade-in-up animation-delay-300">
       <h2 className="text-xl font-bold mb-4">{content.buoy.nearbyBuoys}</h2>
       <div className="space-y-3">
         {otherBuoys.map((buoy) => {

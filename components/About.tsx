@@ -7,10 +7,10 @@ export default function About({ locale }: { locale: Locale }) {
   return (
     <section className="py-20 px-4 bg-accent/5 overflow-x-hidden">
       <div className="container max-w-4xl mx-auto text-center">
-        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-8">
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-8 animate-on-load animate-fade-in-up">
           {content.about.title}
         </h2>
-        <div className="space-y-6 text-base md:text-lg text-muted-foreground">
+        <div className="space-y-6 text-base md:text-lg text-muted-foreground animate-on-load animate-fade-in-up animation-delay-100">
           <p>
             {content.about.paragraph1}
           </p>
