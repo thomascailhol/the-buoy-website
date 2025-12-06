@@ -1,17 +1,16 @@
-'use client';
-
-import { useEffect } from 'react';
-import type { Locale } from '@/middleware';
+import type { Locale } from "@/middleware";
 
 /**
- * Client component to set html lang attribute dynamically
- * Since nested layouts can't modify the root html tag, we do it client-side
+ * Sets html lang attribute immediately (before React hydration)
+ * This ensures the lang attribute is correct for SEO and accessibility
+ * Since nested layouts can't modify the root html tag, we use a blocking script
  */
 export default function LocaleScript({ locale }: { locale: Locale }) {
-  useEffect(() => {
-    document.documentElement.lang = locale;
-  }, [locale]);
-
-  return null;
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `document.documentElement.lang = ${JSON.stringify(locale)};`,
+      }}
+    />
+  );
 }
-

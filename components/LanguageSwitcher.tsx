@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Globe } from 'lucide-react';
 import {
@@ -17,6 +17,7 @@ export default function LanguageSwitcher({ currentLocale }: { currentLocale: Loc
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { i18n } = useTranslation();
 
   useEffect(() => {
@@ -33,9 +34,19 @@ export default function LanguageSwitcher({ currentLocale }: { currentLocale: Loc
     // Set cookie for future visits
     document.cookie = `locale=${newLocale}; path=/; max-age=31536000`; // 1 year
     
+    // Preserve the current path when switching languages
+    // Replace the locale in the pathname with the new locale
+    // e.g., /fr/buoy/some-buoy -> /en/buoy/some-buoy
+    const pathWithoutLocale = pathname.replace(`/${currentLocale}`, '') || '/';
+    const newPath = `/${newLocale}${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`;
+    
+    // Preserve query parameters if any
+    const queryString = searchParams.toString();
+    const finalUrl = queryString ? `${newPath}?${queryString}` : newPath;
+    
     // Use window.location for full page navigation to ensure server-side rendering
     // This ensures the new locale is properly rendered on the server
-    window.location.href = `/${newLocale}`;
+    window.location.href = finalUrl;
   };
 
   const localeNames: Record<Locale, string> = {

@@ -50,8 +50,19 @@ export function middleware(request: NextRequest) {
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
 
-  // If already has locale, continue
+  // If already has locale, ensure cookie is set and continue
   if (pathnameHasLocale) {
+    const localeFromPath = pathname.split('/')[1] as Locale;
+    if (locales.includes(localeFromPath)) {
+      const response = NextResponse.next();
+      // Update cookie to match current path locale
+      response.cookies.set('locale', localeFromPath, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+        sameSite: 'lax',
+      });
+      return response;
+    }
     return NextResponse.next();
   }
 
@@ -68,11 +79,17 @@ export function middleware(request: NextRequest) {
   // Detect locale
   const locale = getLocale(request) || defaultLocale;
   
-  // Redirect to locale-specific path
-  const newUrl = new URL(request.url);
-  newUrl.pathname = `/${locale}${pathname === '/' ? '' : pathname}`;
+  // Set cookie with detected locale for future requests
+  const response = NextResponse.redirect(
+    new URL(`/${locale}${pathname === '/' ? '' : pathname}`, request.url)
+  );
+  response.cookies.set('locale', locale, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+    sameSite: 'lax',
+  });
   
-  return NextResponse.redirect(newUrl);
+  return response;
 }
 
 export const config = {
