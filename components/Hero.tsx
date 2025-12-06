@@ -8,7 +8,7 @@ import type { Locale } from '@/middleware';
  */
 export default function Hero({ locale }: { locale: Locale }) {
   const content = getServerContent(locale);
-  const logoSrc = locale === 'en' ? '/assets/logo-horizontal-en.svg' : '/assets/logo-horizontal.png';
+  const logoSrc = locale === 'en' ? '/assets/logo-horizontal-en.svg' : '/assets/la_bouee_fr.svg';
   return (
     <section className="min-h-screen flex items-center justify-center bg-primary text-primary-foreground px-4 py-20 overflow-x-hidden">
       <div className="container max-w-6xl mx-auto">
