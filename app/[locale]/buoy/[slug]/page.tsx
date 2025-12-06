@@ -8,10 +8,7 @@ import {
   BuoyInformation,
   BuoyCTA,
   ReadingsTable,
-  NearbyBuoysSection,
-  NearbySpotsSection,
 } from "./components";
-import { NearbyBuoysSkeleton, NearbySpotsSkeleton } from "./skeletons";
 import { generateBuoyMetadata } from "./utils/metadata";
 import { generateStructuredData } from "./utils/structured-data";
 
@@ -87,26 +84,6 @@ export default async function BuoyDetailPage({ params, searchParams }: Props) {
             slug={slug}
             timezone={buoy.dtz}
           />
-        </div>
-
-        {/* Nearby Buoys & Spots - Suspense boundaries */}
-        <div className="container max-w-5xl mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            {/* Nearby Buoys */}
-            <Suspense fallback={<NearbyBuoysSkeleton />}>
-              <NearbyBuoysSection
-                lat={lat}
-                lng={lng}
-                currentBuoyId={buoy.id}
-                locale={locale}
-              />
-            </Suspense>
-
-            {/* Nearby Spots */}
-            <Suspense fallback={<NearbySpotsSkeleton />}>
-              <NearbySpotsSection lat={lat} lng={lng} locale={locale} />
-            </Suspense>
-          </div>
         </div>
 
         {/* Information Section */}

@@ -4,8 +4,4 @@ export { BuoyInformation } from "./BuoyInformation";
 export { BuoyCTA } from "./BuoyCTA";
 export { PaginationControls } from "./PaginationControls";
 export { PerPageSelector } from "./PerPageSelector";
-export {
-  ReadingsTable,
-  NearbyBuoysSection,
-  NearbySpotsSection,
-} from "../async-components";
+export { ReadingsTable } from "../async-components";

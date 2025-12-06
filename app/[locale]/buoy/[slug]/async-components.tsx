@@ -1,15 +1,9 @@
 import { Suspense } from "react";
-import Link from "next/link";
-import { Navigation2, Waves, MapPinned } from "lucide-react";
+import { Navigation2 } from "lucide-react";
 import {
   fetchBuoyReadings,
-  fetchNearestBuoys,
-  fetchNearestSpots,
-  slugify,
   getDirectionLabel,
   type BuoyReading,
-  type NearbyBuoy,
-  type Spot,
 } from "@/lib/api/buoys";
 import { type Locale } from "@/middleware";
 import { getServerContent } from "@/lib/i18n/server-content";
@@ -313,116 +307,3 @@ async function ReadingsTableBody({
   );
 }
 
-// Async component for nearby buoys
-export async function NearbyBuoysSection({
-  lat,
-  lng,
-  currentBuoyId,
-  locale,
-}: {
-  lat: number;
-  lng: number;
-  currentBuoyId: number;
-  locale: Locale;
-}) {
-  const nearestBuoys = await fetchNearestBuoys(lat, lng, 200);
-  const otherNearbyBuoys = nearestBuoys
-    .filter((b) => b.id !== currentBuoyId)
-    .slice(0, 5);
-  const content = getServerContent(locale);
-  const text = content.buoy;
-
-  return (
-    <div className="bg-card border rounded-xl p-6 shadow-sm">
-      <div className="flex items-center gap-3 mb-4">
-        <Waves className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-bold">{text.nearbyBuoys}</h2>
-      </div>
-      {otherNearbyBuoys.length > 0 ? (
-        <div className="space-y-3">
-          {otherNearbyBuoys.map((nearbyBuoy) => (
-            <Link
-              key={nearbyBuoy.id}
-              href={`/${locale}/buoy/${slugify(nearbyBuoy.name)}`}
-              className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-                  {nearbyBuoy.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {nearbyBuoy.source}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-                {nearbyBuoy.last_reading?.significient_height != null && (
-                  <span className="text-sm font-semibold text-primary">
-                    {nearbyBuoy.last_reading.significient_height.toFixed(1)}m
-                  </span>
-                )}
-                <span className="text-xs text-muted-foreground bg-background px-2 py-1 rounded-full">
-                  {nearbyBuoy.distance_km.toFixed(0)} {text.kmAway}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          {text.noNearbyBuoys}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// Async component for nearby spots
-export async function NearbySpotsSection({
-  lat,
-  lng,
-  locale,
-}: {
-  lat: number;
-  lng: number;
-  locale: Locale;
-}) {
-  const nearestSpots = await fetchNearestSpots(lat, lng, 200);
-  const nearbySpots = nearestSpots.slice(0, 5);
-  const content = getServerContent(locale);
-  const text = content.buoy;
-
-  return (
-    <div className="bg-card border rounded-xl p-6 shadow-sm">
-      <div className="flex items-center gap-3 mb-4">
-        <MapPinned className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-bold">{text.nearbySpots}</h2>
-      </div>
-      {nearbySpots.length > 0 ? (
-        <div className="space-y-3">
-          {nearbySpots.map((spot) => (
-            <div
-              key={spot.id}
-              className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{spot.name}</p>
-                {spot.country && (
-                  <p className="text-xs text-muted-foreground">
-                    {spot.country}
-                  </p>
-                )}
-              </div>
-              <span className="text-xs text-muted-foreground bg-background px-2 py-1 rounded-full flex-shrink-0 ml-3">
-                {spot.distance_km.toFixed(0)} {text.kmAway}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          {text.noNearbySpots}
-        </p>
-      )}
-    </div>
-  );
-}

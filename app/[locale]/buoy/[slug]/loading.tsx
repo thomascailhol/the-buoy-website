@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import { ReadingsTableSkeleton, NearbyBuoysSkeleton, NearbySpotsSkeleton } from './skeletons';
+import { ReadingsTableSkeleton } from './skeletons';
 
 export default function BuoyDetailLoading() {
   return (
@@ -43,14 +43,6 @@ export default function BuoyDetailLoading() {
         {/* Readings History Table Skeleton */}
         <div className="container max-w-5xl mx-auto px-4">
           <ReadingsTableSkeleton />
-        </div>
-
-        {/* Nearby Buoys & Spots Skeletons */}
-        <div className="container max-w-5xl mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <NearbyBuoysSkeleton />
-            <NearbySpotsSkeleton />
-          </div>
         </div>
 
         {/* Information Section Skeleton */}
