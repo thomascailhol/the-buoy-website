@@ -7,6 +7,7 @@ import {
   BuoyHero,
   BuoyInformation,
   BuoyCTA,
+  NearbyBuoys,
   ReadingsTable,
 } from "./components";
 import { generateBuoyMetadata } from "./utils/metadata";
@@ -77,6 +78,34 @@ async function BuoyContent({
         {/* Information Section */}
         <div className="container max-w-5xl mx-auto px-4">
           <BuoyInformation buoy={buoy} locale={locale} lat={lat} lng={lng} />
+        </div>
+
+        {/* Nearby Buoys Section */}
+        <div className="container max-w-5xl mx-auto px-4">
+          <Suspense
+            fallback={
+              <div className="bg-card border rounded-xl p-6 mb-8 animate-pulse">
+                <div className="h-6 w-48 bg-muted rounded mb-4" />
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 border rounded-lg">
+                      <div className="h-5 w-32 bg-muted rounded mb-2" />
+                      <div className="h-4 w-24 bg-muted rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            }
+          >
+            <NearbyBuoys
+              lat={lat}
+              lng={lng}
+              locale={locale}
+              currentBuoyId={buoy.id}
+              maxDistance={200}
+              limit={5}
+            />
+          </Suspense>
         </div>
 
         {/* CTA Section */}
