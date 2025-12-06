@@ -32,6 +32,7 @@ export default async function RootLayout({
     <html lang={lang} suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
