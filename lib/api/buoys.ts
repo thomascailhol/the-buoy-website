@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 const API_BASE_URL =
   process.env.SURFKIT_API_BASE_URL || "http://localhost:3000/api/v2";
 const API_KEY = process.env.SURFKIT_API_KEY || "";
@@ -92,32 +94,36 @@ export async function fetchAllBuoys(): Promise<Buoy[]> {
   }
 }
 
-export async function fetchBuoyBySlug(slug: string): Promise<Buoy | null> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/buoys/${slug}`, {
-      headers: {
-        Authorization: `Bearer ${API_KEY}`,
-        Accept: "application/json",
-      },
-      next: { revalidate: 300 }, // Cache for 5 minutes
-    });
+// Wrapped with React cache() to deduplicate calls within the same request
+// This ensures generateMetadata and the page component share the same fetch
+export const fetchBuoyBySlug = cache(
+  async (slug: string): Promise<Buoy | null> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/buoys/${slug}`, {
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+          Accept: "application/json",
+        },
+        next: { revalidate: 60 }, // Cache for 1 minute (reduced for fresher data)
+      });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null;
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(
+          `Failed to fetch buoy: ${response.status} ${response.statusText}`
+        );
       }
-      throw new Error(
-        `Failed to fetch buoy: ${response.status} ${response.statusText}`
-      );
-    }
 
-    const data = await response.json();
-    return data.data?.buoy || null;
-  } catch (error) {
-    console.error("Error fetching buoy by slug:", error);
-    return null;
+      const data = await response.json();
+      return data.data?.buoy || null;
+    } catch (error) {
+      console.error("Error fetching buoy by slug:", error);
+      return null;
+    }
   }
-}
+);
 
 export async function fetchBuoyById(id: number): Promise<Buoy | null> {
   try {

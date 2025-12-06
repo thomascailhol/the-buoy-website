@@ -14,6 +14,9 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
+// Revalidate every 5 minutes (buoy list doesn't change often)
+export const revalidate = 300;
+
 export async function generateStaticParams() {
   return [{ locale: 'fr' }, { locale: 'en' }, { locale: 'es' }];
 }

@@ -12,9 +12,10 @@ import {
 import { generateBuoyMetadata } from "./utils/metadata";
 import { generateStructuredData } from "./utils/structured-data";
 
-// This makes the page dynamic - data is fetched fresh on each request
-// But still server-rendered for SEO (content is in HTML)
-export const dynamic = "force-dynamic";
+// Use ISR: page is cached and revalidated every 60 seconds
+// This dramatically improves TTFB while keeping data reasonably fresh
+// The readings table inside uses Suspense with no-store for real-time data
+export const revalidate = 60;
 
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
